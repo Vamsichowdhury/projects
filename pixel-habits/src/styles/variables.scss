@@ -1,0 +1,19 @@
+// Heatmap tier colours — light theme
+:root {
+  --heatmap-0: #ebedf0;
+  --heatmap-1: #9be9a8;
+  --heatmap-2: #40c463;
+  --heatmap-3: #30a14e;
+  --heatmap-4: #216e39;
+  --heatmap-5: #0e4829;
+}
+
+// Heatmap tier colours — dark theme
+.v-theme--dark {
+  --heatmap-0: #21262d;
+  --heatmap-1: #0e4429;
+  --heatmap-2: #006d32;
+  --heatmap-3: #26a641;
+  --heatmap-4: #39d353;
+  --heatmap-5: #69ff7d;
+}

@@ -30,6 +30,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { isSameMonth } from 'date-fns'
 import { useHabitStore } from '@/stores/habit.store'
 import { useHeatmap } from '@/composables/useHeatmap'
 import HeatmapCell from './HeatmapCell.vue'
@@ -55,6 +56,35 @@ const { dailyWeeks, monthLabels, weeklyCells, monthlyCells } = useHeatmap(
 const DAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 const LEGEND_TIERS = [1, 2, 3, 4, 5] as const
 
+const monthStartWeeks = computed(() =>
+  new Set(monthLabels.value.filter(m => m.column > 1).map(m => m.column - 1))
+)
+
+const weekMonthBoundaries = computed(() => {
+  const cells = weeklyCells.value
+  if (!cells || cells.length === 0) return []
+  return cells.map((cell, i) => i > 0 && !isSameMonth(cell.date, cells[i - 1]!.date))
+})
+
+const weeklyMonthLabels = computed(() => {
+  const cells = weeklyCells.value
+  if (!cells) return []
+  const labels: { name: string; index: number }[] = []
+  let lastMonth = -1
+  for (let i = 0; i < cells.length; i++) {
+    const month = cells[i]!.date.getMonth()
+    if (month !== lastMonth) {
+      labels.push({ name: cells[i]!.label.slice(0, 3), index: i })
+      lastMonth = month
+    }
+  }
+  // Span = number of week-columns this month occupies, so the label can be centered over them
+  return labels.map((label, i) => {
+    const nextIndex = i < labels.length - 1 ? labels[i + 1]!.index : cells.length
+    return { ...label, span: nextIndex - label.index }
+  })
+})
+
 function onCellClick(cell: HeatmapCellType) {
   emit('cellClick', cell)
 }
@@ -72,7 +102,7 @@ function onCellClick(cell: HeatmapCellType) {
               v-for="m in monthLabels"
               :key="m.name"
               class="hm-month-label"
-              :style="{ gridColumn: m.column }"
+              :style="{ gridColumn: `${m.column} / span ${m.span}` }"
             >
               {{ m.name }}
             </span>
@@ -85,7 +115,12 @@ function onCellClick(cell: HeatmapCellType) {
             </span>
           </div>
           <div class="hm-grid">
-            <div v-for="(week, wi) in dailyWeeks" :key="wi" class="hm-week">
+            <div
+              v-for="(week, wi) in dailyWeeks"
+              :key="wi"
+              class="hm-week"
+              :class="{ 'hm-week--month-start': monthStartWeeks.has(wi) }"
+            >
               <HeatmapCell
                 v-for="(cell, di) in week"
                 :key="di"
@@ -102,17 +137,32 @@ function onCellClick(cell: HeatmapCellType) {
 
     <!-- ── WEEKLY: one cell per week ── -->
     <template v-else-if="habit.frequency === 'weekly'">
-      <div class="hm-linear" role="grid" :aria-label="`${habit.name} weekly heatmap`">
+      <div class="hm-scroll" role="grid" :aria-label="`${habit.name} weekly heatmap`">
+        <div class="hm-linear__months" :style="{ '--wc': weeklyCells.length }">
+          <span
+            v-for="m in weeklyMonthLabels"
+            :key="`${m.index}-${m.name}`"
+            class="hm-linear__month-label"
+            :style="{ gridColumn: `${m.index + 1} / span ${m.span}` }"
+          >
+            {{ m.name }}
+          </span>
+        </div>
         <div class="hm-linear__cells">
-          <HeatmapCell
-            v-for="cell in weeklyCells"
+          <span
+            v-for="(cell, i) in weeklyCells"
             :key="cell.dateStr"
-            :cell="cell"
-            :habit-color="habit.color"
-            :size="13"
-            clickable
-            @click="onCellClick"
-          />
+            class="hm-linear__item"
+            :class="{ 'hm-linear__item--month-start': weekMonthBoundaries[i] }"
+          >
+            <HeatmapCell
+              :cell="cell"
+              :habit-color="habit.color"
+              :size="13"
+              clickable
+              @click="onCellClick"
+            />
+          </span>
         </div>
         <div class="hm-linear__info">{{ weeklyCells.length }} weeks this year</div>
       </div>
@@ -179,6 +229,7 @@ function onCellClick(cell: HeatmapCellType) {
   font-size: 0.68rem;
   opacity: 0.65;
   white-space: nowrap;
+  text-align: center;
 }
 
 .hm-body {
@@ -211,14 +262,52 @@ function onCellClick(cell: HeatmapCellType) {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  position: relative;
+
+  &--month-start::before {
+    content: '';
+    position: absolute;
+    left: -3px;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: rgba(var(--v-theme-on-surface), 0.15);
+  }
 }
 
 /* ──── WEEKLY ─────────────────────────────────────────────────────────── */
 .hm-linear {
+  &__months {
+    display: grid;
+    grid-template-columns: repeat(var(--wc), 15px);
+    margin-bottom: 4px;
+  }
+
+  &__month-label {
+    font-size: 0.68rem;
+    opacity: 0.65;
+    white-space: nowrap;
+    text-align: center;
+  }
+
   &__cells {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 2px;
+  }
+
+  &__item {
+    position: relative;
+
+    &--month-start::before {
+      content: '';
+      position: absolute;
+      left: -3px;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: rgba(var(--v-theme-on-surface), 0.15);
+    }
   }
 
   &__info {

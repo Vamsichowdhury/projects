@@ -21,6 +21,7 @@ const store = useHabitStore()
         rounded
         height="8"
         class="progress-card__bar"
+        :class="{ 'progress-card__bar--complete': store.todayPercent === 100 }"
         aria-label="Today's completion progress"
       />
 
@@ -84,5 +85,10 @@ const store = useHabitStore()
 .percent-pop-leave-to {
   opacity: 0;
   transform: scale(0.5);
+}
+
+.progress-card__bar--complete {
+  box-shadow: var(--glow-primary);
+  animation: pulse-glow var(--dur-slower) var(--ease-standard) infinite;
 }
 </style>

@@ -122,7 +122,7 @@ export function useHeatmap(frequency: Ref<HabitFrequency>, entries: Ref<HabitEnt
    * Used to render month names above the daily grid.
    * Example: If Feb 1 falls in week 5, column = 5, so label appears above week 5.
    */
-  const monthLabels = computed<{ name: string; column: number }[]>(() => {
+  const monthLabels = computed<{ name: string; column: number; span: number }[]>(() => {
     const labels: { name: string; column: number }[] = []
     for (let m = 0; m < 12; m++) {
       const firstDay = new Date(today.getFullYear(), m, 1)
@@ -133,7 +133,13 @@ export function useHeatmap(frequency: Ref<HabitFrequency>, entries: Ref<HabitEnt
       const column = Math.floor((dayIndex + startOffset.value) / 7) + 1  // Which week?
       labels.push({ name: format(firstDay, 'MMM'), column })
     }
-    return labels
+
+    // Span = number of week-columns this month occupies, so the label can be centered over them
+    const totalWeeks = dailyWeeks.value.length
+    return labels.map((label, i) => {
+      const nextColumn = i < labels.length - 1 ? labels[i + 1]!.column : totalWeeks + 1
+      return { ...label, span: nextColumn - label.column }
+    })
   })
 
   // ──────────────────────────────────────────────────────────────────────────────────────

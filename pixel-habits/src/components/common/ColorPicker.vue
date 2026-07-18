@@ -11,7 +11,7 @@ const model = defineModel<string>({ required: true })
       <button
         v-for="c in HABIT_COLORS"
         :key="c"
-        :style="{ backgroundColor: c }"
+        :style="{ backgroundColor: c, boxShadow: model === c ? `0 0 10px 2px ${c}` : undefined }"
         :class="['color-swatch', { 'color-swatch--selected': model === c }]"
         :aria-label="`Select color ${c}`"
         :aria-pressed="model === c"
@@ -47,7 +47,8 @@ const model = defineModel<string>({ required: true })
   padding: 0;
   transition:
     transform var(--dur-fast) var(--ease-standard),
-    border-color var(--dur-fast) var(--ease-standard);
+    border-color var(--dur-fast) var(--ease-standard),
+    box-shadow var(--dur-fast) var(--ease-standard);
   outline: none;
 
   &:hover {

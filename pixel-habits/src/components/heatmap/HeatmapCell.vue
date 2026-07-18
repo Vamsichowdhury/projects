@@ -48,11 +48,12 @@ const emit = defineEmits<{
 const cellSize = computed(() => `${props.size ?? 10}px`)
 
 const bgStyle = computed(() => {
-  if (!props.cell || props.cell.tier === 0) return {}
+  if (!props.cell || props.cell.tier === 0) return { '--cell-color': props.habitColor }
   // color-mix blends theme-aware empty color (--heatmap-0) with the habit color
   const emptyPct = (5 - props.cell.tier) * 20
   return {
     '--hc': props.habitColor,
+    '--cell-color': props.habitColor,
     backgroundColor: `color-mix(in srgb, var(--heatmap-0) ${emptyPct}%, var(--hc))`,
   }
 })
@@ -132,7 +133,7 @@ function handleClick() {
     &:hover,
     &:focus-visible {
       transform: scale(1.15);
-      box-shadow: inset 0 0 0 1px rgba(var(--v-theme-on-surface), 0.4);
+      box-shadow: inset 0 0 0 1px rgba(var(--v-theme-on-surface), 0.4), 0 0 6px var(--cell-color);
     }
 
     &:focus-visible {

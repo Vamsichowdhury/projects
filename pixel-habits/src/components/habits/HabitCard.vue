@@ -65,7 +65,7 @@ function onDeleteConfirm() {
       <div class="habit-card__identity">
         <span
           class="habit-card__color-dot"
-          :style="{ backgroundColor: habit.color }"
+          :style="{ backgroundColor: habit.color, boxShadow: `0 0 6px 1px ${habit.color}` }"
           aria-hidden="true"
         />
         <span class="habit-card__emoji" aria-hidden="true">{{ habit.emoji }}</span>
@@ -76,7 +76,11 @@ function onDeleteConfirm() {
       </div>
 
       <div class="habit-card__meta">
-        <span class="habit-card__streak" :title="`Current streak: ${currentStreak}`">
+        <span
+          class="habit-card__streak"
+          :class="{ 'habit-card__streak--active': currentStreak > 0 }"
+          :title="`Current streak: ${currentStreak}`"
+        >
           🔥 {{ currentStreak }}
         </span>
         <span class="habit-card__streak" :title="`Longest streak: ${longestStreak}`">
@@ -125,6 +129,13 @@ function onDeleteConfirm() {
 
 <style scoped lang="scss">
 .habit-card {
+  transition: transform var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
   &__header {
     display: flex;
     align-items: center;
@@ -146,6 +157,7 @@ function onDeleteConfirm() {
     height: 10px;
     border-radius: 50%;
     flex-shrink: 0;
+    transition: box-shadow var(--dur-fast) var(--ease-standard);
   }
 
   &__emoji {
@@ -173,6 +185,11 @@ function onDeleteConfirm() {
     opacity: 0.85;
     white-space: nowrap;
     padding: 0 4px;
+    transition: text-shadow var(--dur-fast) var(--ease-standard);
+
+    &--active {
+      text-shadow: 0 0 8px rgba(255, 140, 40, 0.65);
+    }
   }
 }
 </style>

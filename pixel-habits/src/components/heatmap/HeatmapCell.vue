@@ -80,7 +80,7 @@ function handleClick() {
         :class="[
           'hm-cell',
           cell.tier === 0 ? 'hm-cell--empty' : 'hm-cell--filled',
-          { 'hm-cell--clickable': clickable },
+          { 'hm-cell--clickable': clickable, 'hm-cell--future': cell.isFuture },
         ]"
         :style="[{ width: cellSize, height: cellSize }, bgStyle]"
         :aria-label="tooltipText"
@@ -140,6 +140,10 @@ function handleClick() {
       outline: 2px solid rgb(var(--v-theme-primary));
       outline-offset: 2px;
     }
+  }
+
+  &--future {
+    opacity: 0.35;
   }
 }
 </style>

@@ -22,6 +22,7 @@ import {
   differenceInCalendarDays,
   isAfter,
   startOfYear,
+  endOfYear,
   startOfWeek,
   endOfWeek,
   startOfMonth,
@@ -47,6 +48,7 @@ function ratingToTier(rating: number): HeatmapTier {
 export function useHeatmap(frequency: Ref<HabitFrequency>, entries: Ref<HabitEntry[]>) {
   const today = new Date()
   const yearStart = startOfYear(today)  // Jan 1 of current year
+  const yearEnd = endOfYear(today)  // Dec 31 of current year
 
   /**
    * Map entries by date for O(1) lookup.
@@ -71,11 +73,12 @@ export function useHeatmap(frequency: Ref<HabitFrequency>, entries: Ref<HabitEnt
   const startOffset = computed(() => getDay(yearStart))  // 0=Sunday, 6=Saturday
 
   /**
-   * All days from Jan 1 to today, converted to HeatmapCell objects.
+   * All days from Jan 1 to Dec 31, converted to HeatmapCell objects.
    * Each cell has tier (0-5 based on entry rating) and entry data for tooltips.
+   * Future cells (after today) are marked isFuture: true for visual/interaction muting.
    */
   const dailyCells = computed<HeatmapCell[]>(() => {
-    const days = eachDayOfInterval({ start: yearStart, end: today })
+    const days = eachDayOfInterval({ start: yearStart, end: yearEnd })
     return days.map((date) => {
       const dateStr = format(date, 'yyyy-MM-dd')
       const entry = entryMap.value.get(dateStr) ?? null  // null if user hasn't marked this day
@@ -85,7 +88,7 @@ export function useHeatmap(frequency: Ref<HabitFrequency>, entries: Ref<HabitEnt
         tier: entry ? ratingToTier(entry.rating) : 0,  // 0=empty (gray), 1-5=colored
         entry,  // Full entry data (rating, description) for tooltip/detail dialog
         label: format(date, 'MMM d, yyyy'),  // Human-readable date for tooltip
-        isFuture: false,
+        isFuture: isAfter(date, today),
       }
     })
   })
@@ -148,16 +151,17 @@ export function useHeatmap(frequency: Ref<HabitFrequency>, entries: Ref<HabitEnt
   // ──────────────────────────────────────────────────────────────────────────────────────
 
   /**
-   * One cell per week (52 weeks this year).
+   * One cell per week (52-53 weeks this year, through Dec 31).
    * Linear layout: renders as a single row of cells.
-   * Example: Cell 1 = Jan 1-7, Cell 2 = Jan 8-14, ..., Cell 52 = Dec 23-29
+   * Example: Cell 1 = Jan 1-7, Cell 2 = Jan 8-14, ..., final cell = Dec 24-31
    * Note: Uses Monday (weekStartsOn: 1) as week start for consistency with GitHub.
+   * Future cells (weeks after today's week) are marked isFuture: true.
    */
   const weeklyCells = computed<HeatmapCell[]>(() => {
     const cells: HeatmapCell[] = []
     let week = startOfWeek(yearStart, { weekStartsOn: 1 })  // Monday-based weeks
 
-    while (!isAfter(week, today)) {
+    while (!isAfter(week, yearEnd)) {
       const dateStr = format(week, 'yyyy-MM-dd')  // Use Monday date as identifier
       const entry = entryMap.value.get(dateStr) ?? null  // Look up entry by week start
       const weekEnd = endOfWeek(week, { weekStartsOn: 1 })
@@ -168,7 +172,7 @@ export function useHeatmap(frequency: Ref<HabitFrequency>, entries: Ref<HabitEnt
         tier: entry ? ratingToTier(entry.rating) : 0,  // Rating is per week, not daily
         entry,
         label: `${format(week, 'MMM d')} – ${format(weekEnd, 'MMM d, yyyy')}`,  // Week range
-        isFuture: false,
+        isFuture: isAfter(week, today),
       })
       week = addWeeks(week, 1)  // Next week
     }
@@ -180,15 +184,16 @@ export function useHeatmap(frequency: Ref<HabitFrequency>, entries: Ref<HabitEnt
   // ──────────────────────────────────────────────────────────────────────────────────────
 
   /**
-   * One cell per month (12 total, or fewer if we're before December).
+   * One cell per month (always 12 for the full calendar year).
    * Grid layout: 4×3 or similar, rendered by HabitHeatmap component.
    * Example: Cell 1 = January, Cell 2 = February, ..., Cell 12 = December
+   * Future cells (months after today's month) are marked isFuture: true.
    */
   const monthlyCells = computed<HeatmapCell[]>(() => {
     const cells: HeatmapCell[] = []
     let month = startOfMonth(yearStart)  // Jan 1
 
-    while (!isAfter(month, today) && isSameYear(month, today)) {
+    while (isSameYear(month, today)) {
       const dateStr = format(month, 'yyyy-MM-dd')  // First day of month
       const entry = entryMap.value.get(dateStr) ?? null  // Look up entry by month start
 
@@ -198,7 +203,7 @@ export function useHeatmap(frequency: Ref<HabitFrequency>, entries: Ref<HabitEnt
         tier: entry ? ratingToTier(entry.rating) : 0,  // Rating is per month, not daily
         entry,
         label: format(month, 'MMMM yyyy'),  // "January 2025"
-        isFuture: false,
+        isFuture: isAfter(month, today),
       })
       month = addMonths(month, 1)  // Next month
     }

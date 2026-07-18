@@ -10,10 +10,11 @@ Parent (HabitCard) listens and opens PixelDetailDialog * - Colors determined by 
 (0-5) and habit color (blend) * * No data mutations; purely presentational. */
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, nextTick, ref } from 'vue'
 import { isSameMonth } from 'date-fns'
 import { useHabitStore } from '@/stores/habit.store'
 import { useHeatmap } from '@/composables/useHeatmap'
+import { getTodayStr } from '@/utils/dateUtils'
 import HeatmapCell from './HeatmapCell.vue'
 import type { Habit, HeatmapCell as HeatmapCellType } from '@/types'
 
@@ -34,8 +35,27 @@ const { dailyWeeks, monthLabels, weeklyCells, monthlyCells } = useHeatmap(
   habitEntries,
 )
 
+const todayStr = getTodayStr()
+const dailyScrollRef = ref<HTMLElement | null>(null)
+const weeklyScrollRef = ref<HTMLElement | null>(null)
+
 const DAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 const LEGEND_TIERS = [1, 2, 3, 4, 5] as const
+
+// Index of the week-column in dailyWeeks that contains today's exact date
+const todayDailyColumn = computed(() =>
+  dailyWeeks.value.findIndex((week) => week.some((cell) => cell?.dateStr === todayStr)),
+)
+
+// weeklyCells' dateStr is each week's Monday, not todayStr — the current week is
+// the last non-future cell, since cells are chronologically ordered
+const todayWeeklyIndex = computed(() => {
+  let idx = -1
+  weeklyCells.value.forEach((c, i) => {
+    if (!c.isFuture) idx = i
+  })
+  return idx
+})
 
 const monthStartWeeks = computed(
   () => new Set(monthLabels.value.filter((m) => m.column > 1).map((m) => m.column - 1)),
@@ -69,13 +89,24 @@ const weeklyMonthLabels = computed(() => {
 function onCellClick(cell: HeatmapCellType) {
   emit('cellClick', cell)
 }
+
+onMounted(() => {
+  nextTick(() => {
+    dailyScrollRef.value
+      ?.querySelector('[data-today-column]')
+      ?.scrollIntoView({ inline: 'center', block: 'nearest' })
+    weeklyScrollRef.value
+      ?.querySelector('[data-today-column]')
+      ?.scrollIntoView({ inline: 'center', block: 'nearest' })
+  })
+})
 </script>
 
 <template>
   <div class="habit-heatmap">
     <!-- ── DAILY: year grid ── -->
     <template v-if="habit.frequency === 'daily'">
-      <div class="hm-scroll" role="grid" :aria-label="`${habit.name} heatmap`">
+      <div ref="dailyScrollRef" class="hm-scroll" role="grid" :aria-label="`${habit.name} heatmap`">
         <div class="hm-months-row">
           <div class="hm-day-spacer" aria-hidden="true" />
           <div class="hm-months" :style="{ '--wc': dailyWeeks.length }">
@@ -101,13 +132,14 @@ function onCellClick(cell: HeatmapCellType) {
               :key="wi"
               class="hm-week"
               :class="{ 'hm-week--month-start': monthStartWeeks.has(wi) }"
+              :data-today-column="wi === todayDailyColumn ? '' : undefined"
             >
               <HeatmapCell
                 v-for="(cell, di) in week"
                 :key="di"
                 :cell="cell"
                 :habit-color="habit.color"
-                :clickable="cell !== null"
+                :clickable="cell !== null && !cell?.isFuture"
                 @click="onCellClick"
               />
             </div>
@@ -118,7 +150,7 @@ function onCellClick(cell: HeatmapCellType) {
 
     <!-- ── WEEKLY: one cell per week ── -->
     <template v-else-if="habit.frequency === 'weekly'">
-      <div class="hm-scroll" role="grid" :aria-label="`${habit.name} weekly heatmap`">
+      <div ref="weeklyScrollRef" class="hm-scroll" role="grid" :aria-label="`${habit.name} weekly heatmap`">
         <div class="hm-linear__months" :style="{ '--wc': weeklyCells.length }">
           <span
             v-for="m in weeklyMonthLabels"
@@ -135,12 +167,13 @@ function onCellClick(cell: HeatmapCellType) {
             :key="cell.dateStr"
             class="hm-linear__item"
             :class="{ 'hm-linear__item--month-start': weekMonthBoundaries[i] }"
+            :data-today-column="i === todayWeeklyIndex ? '' : undefined"
           >
             <HeatmapCell
               :cell="cell"
               :habit-color="habit.color"
               :size="13"
-              clickable
+              :clickable="!cell.isFuture"
               @click="onCellClick"
             />
           </span>
@@ -157,7 +190,7 @@ function onCellClick(cell: HeatmapCellType) {
             :cell="cell"
             :habit-color="habit.color"
             :size="28"
-            clickable
+            :clickable="!cell.isFuture"
             @click="onCellClick"
           />
           <span class="hm-monthly__label">{{ cell.label.slice(0, 3) }}</span>

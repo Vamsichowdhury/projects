@@ -10,6 +10,7 @@ import {
   linkWithCredential,
   EmailAuthProvider,
   signOut,
+  sendPasswordResetEmail,
   type User,
 } from 'firebase/auth'
 import { auth, googleProvider } from '@/firebase/auth'
@@ -40,6 +41,8 @@ function mapAuthError(err: unknown): string {
       return 'Network error. Check your connection and try again.'
     case 'auth/too-many-requests':
       return 'Too many attempts. Please wait a moment and try again.'
+    case 'auth/missing-email':
+      return 'Please enter your email address.'
     default:
       return 'Something went wrong. Please try again.'
   }
@@ -121,6 +124,10 @@ export const useAuthStore = defineStore('auth', () => {
     return run(() => signOut(auth))
   }
 
+  function resetPassword(emailAddr: string) {
+    return run(() => sendPasswordResetEmail(auth, emailAddr))
+  }
+
   return {
     user,
     authReady,
@@ -138,5 +145,6 @@ export const useAuthStore = defineStore('auth', () => {
     linkGoogleAccount,
     linkEmailAccount,
     signOutUser,
+    resetPassword,
   }
 })

@@ -6,12 +6,17 @@ import { useAuthStore } from '@/stores/auth.store'
 const authStore = useAuthStore()
 const router = useRouter()
 
-const mode = ref<'signin' | 'signup'>('signin')
+const mode = ref<'signin' | 'signup' | 'reset'>('signin')
 const email = ref('')
 const password = ref('')
+const resetSent = ref(false)
 
 const submitting = computed(() => authStore.authLoading)
-const title = computed(() => (mode.value === 'signin' ? 'Sign in' : 'Create account'))
+const title = computed(() => {
+  if (mode.value === 'signin') return 'Sign in'
+  if (mode.value === 'signup') return 'Create account'
+  return 'Reset password'
+})
 
 async function submitEmail() {
   const result =
@@ -29,6 +34,17 @@ async function submitGoogle() {
 async function submitGuest() {
   const result = await authStore.signInAsGuest()
   if (result) router.push('/')
+}
+
+async function submitReset() {
+  const result = await authStore.resetPassword(email.value)
+  if (result !== null) resetSent.value = true
+}
+
+function switchMode(newMode: 'signin' | 'signup' | 'reset') {
+  mode.value = newMode
+  authStore.authError = null
+  resetSent.value = false
 }
 </script>
 
@@ -51,7 +67,7 @@ async function submitGuest() {
             :text="authStore.authError"
           />
 
-          <v-form @submit.prevent="submitEmail">
+          <v-form @submit.prevent="mode === 'reset' ? submitReset() : submitEmail()">
             <v-text-field
               v-model="email"
               label="Email"
@@ -61,6 +77,7 @@ async function submitGuest() {
               autocomplete="email"
             />
             <v-text-field
+              v-if="mode !== 'reset'"
               v-model="password"
               label="Password"
               type="password"
@@ -76,18 +93,38 @@ async function submitGuest() {
               block
               class="mt-4"
               :loading="submitting"
-              :disabled="submitting"
+              :disabled="submitting || resetSent"
             >
-              {{ mode === 'signin' ? 'Sign in' : 'Create account' }}
+              {{
+                mode === 'reset'
+                  ? 'Send reset link'
+                  : mode === 'signin'
+                    ? 'Sign in'
+                    : 'Create account'
+              }}
             </v-btn>
           </v-form>
 
-          <div class="text-center mt-3">
+          <div v-if="mode === 'reset' && resetSent" class="mt-4">
+            <v-alert
+              type="success"
+              variant="tonal"
+              class="mb-3"
+              text="If an account exists for that email, we've sent a reset link. Check your inbox!"
+            />
+            <div class="text-center">
+              <v-btn variant="text" size="small" @click="switchMode('signin')">
+                Back to sign in
+              </v-btn>
+            </div>
+          </div>
+
+          <div v-else-if="mode !== 'reset'" class="text-center mt-3">
             <v-btn
               variant="text"
               size="small"
               :disabled="submitting"
-              @click="mode = mode === 'signin' ? 'signup' : 'signin'"
+              @click="switchMode(mode === 'signin' ? 'signup' : 'signin')"
             >
               {{
                 mode === 'signin' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'
@@ -95,9 +132,22 @@ async function submitGuest() {
             </v-btn>
           </div>
 
-          <v-divider class="my-4" />
+          <div v-if="mode === 'signin'" class="text-center mt-2">
+            <v-btn variant="text" size="small" :disabled="submitting" @click="switchMode('reset')">
+              Forgot password?
+            </v-btn>
+          </div>
+
+          <div v-if="mode === 'reset' && !resetSent" class="text-center mt-3">
+            <v-btn variant="text" size="small" @click="switchMode('signin')">
+              Back to sign in
+            </v-btn>
+          </div>
+
+          <v-divider v-if="mode !== 'reset'" class="my-4" />
 
           <v-btn
+            v-if="mode !== 'reset'"
             variant="outlined"
             block
             prepend-icon="mdi-google"
@@ -106,7 +156,14 @@ async function submitGuest() {
           >
             Continue with Google
           </v-btn>
-          <v-btn variant="text" block class="mt-2" :disabled="submitting" @click="submitGuest">
+          <v-btn
+            v-if="mode !== 'reset'"
+            variant="text"
+            block
+            class="mt-2"
+            :disabled="submitting"
+            @click="submitGuest"
+          >
             Continue as Guest
           </v-btn>
         </v-card-text>

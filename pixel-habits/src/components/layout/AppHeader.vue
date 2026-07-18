@@ -40,6 +40,7 @@ async function handleSignOut() {
 <template>
   <header class="app-header">
     <div class="app-header__text app-header__text--entrance">
+      <p class="app-header__brand">🟩 Pixel Habits</p>
       <h1 class="app-header__greeting">{{ greeting }} 👋</h1>
       <p class="app-header__date">{{ today }}</p>
     </div>
@@ -120,6 +121,19 @@ async function handleSignOut() {
     font-size: 0.875rem;
     margin: 4px 0 0;
     opacity: 0.6;
+  }
+
+  &__brand {
+    background: var(--gradient-brand);
+    background-size: 200% 200%;
+    animation: gradient-shift var(--dur-slower) var(--ease-standard) infinite alternate;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 0 0 2px 0;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
   }
 
   &__actions {

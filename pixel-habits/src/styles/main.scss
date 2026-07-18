@@ -51,8 +51,18 @@ body {
 }
 
 // Fix icon-button focus ring color app-wide
-.v-btn::after {
+.v-btn::after,
+.v-icon-btn::after {
   border-color: rgba(var(--v-theme-primary), 0.6);
+}
+
+// Fix outlined button and field borders in dark mode
+.v-btn--variant-outlined {
+  border-color: rgba(var(--v-theme-on-surface), 0.24);
+}
+
+.v-field--variant-outlined .v-field__outline {
+  --v-field-border-opacity: 0.24;
 }
 
 // Dialog backdrop blur

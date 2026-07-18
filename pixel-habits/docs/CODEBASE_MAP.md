@@ -6,6 +6,16 @@ Quick reference: find code for any feature or concept.
 
 ## 📍 Feature → Code Mapping
 
+### Authentication & Sign-In
+| Component | File | What It Does |
+|-----------|------|--------------|
+| Auth Store | `src/stores/auth.store.ts` | Firebase Auth SDK wrapper; `onAuthStateChanged` listener; sign-in/up/guest/link actions |
+| Auth Guard | `src/router/index.ts` | `beforeEach` guard; redirects unauthenticated users to `/login`, authenticated users away from `/login` |
+| Login UI | `src/views/LoginView.vue` | Email/password form (sign in/up toggle), Google button, guest button, error display |
+| Account Menu | `src/components/layout/AppHeader.vue` | Account icon button, "Save progress" (guest), "Sign out" |
+| Link Dialog | `src/components/dialogs/LinkAccountDialog.vue` | Modal: Google link button, email/password link form (guest only) |
+| Firebase | `src/firebase/auth.ts` | `getAuth()`, `GoogleAuthProvider` exports |
+
 ### Create Habit
 | Component | File | What It Does |
 |-----------|------|--------------|
@@ -115,9 +125,11 @@ Quick reference: find code for any feature or concept.
 ### State Management (Pinia)
 | Concept | File | Details |
 |---------|------|---------|
-| Habit Store | `src/stores/habit.store.ts` | Core state: habits, entries, CRUD, Firestore sync |
+| Auth Store | `src/stores/auth.store.ts` | Firebase Auth wrapper: user, uid, isAnonymous, sign-in/up/guest/link/sign-out |
+| Habit Store | `src/stores/habit.store.ts` | Per-user state: habits, entries, CRUD, Firestore sync (scoped to uid); resubscribes when uid changes |
 | Theme Store | `src/stores/theme.store.ts` | isDark toggle |
-| Computed Properties | `src/stores/habit.store.ts` L30-46 | todayCompleted, todayTotal, todayPercent, dailyHabits |
+| Computed Properties (Auth) | `src/stores/auth.store.ts` | isAuthenticated, isAnonymous, uid, email |
+| Computed Properties (Habit) | `src/stores/habit.store.ts` | todayCompleted, todayTotal, todayPercent, dailyHabits |
 
 ### Business Logic (Composables)
 | Concept | File | Exports |
@@ -147,6 +159,7 @@ Quick reference: find code for any feature or concept.
 | EditHabitDialog | `src/components/dialogs/EditHabitDialog.vue` | Edit habit name/emoji/color/frequency |
 | DeleteConfirmDialog | `src/components/dialogs/DeleteConfirmDialog.vue` | Confirm deletion |
 | PixelDetailDialog | `src/components/dialogs/PixelDetailDialog.vue` | Set/unmark pixel rating + notes |
+| LinkAccountDialog | `src/components/dialogs/LinkAccountDialog.vue` | Link guest account to Google/email |
 | DayDetailDialog | `src/components/dialogs/DayDetailDialog.vue` | (Legacy stub — not actively used) |
 
 ### Styles & Theming
@@ -161,9 +174,10 @@ Quick reference: find code for any feature or concept.
 | Concept | File | Details |
 |---------|------|---------|
 | Firebase Init | `src/firebase/firebase.ts` | `initializeApp()`, `getFirestore()` |
-| Auth Exports | `src/firebase/auth.ts` | `getAuth()` (prepared for future use) |
+| Auth SDK | `src/firebase/auth.ts` | `getAuth()`, `GoogleAuthProvider` |
+| Security Rules | `firestore.rules` (repo root) | Per-user access control for `users/{uid}/habits` and `users/{uid}/entries` |
 | Config | `.env.local` | API keys, project ID, etc. |
-| Collections | Firestore UI | `habits`, `entries` |
+| Collections | Firestore UI | `users/{uid}/habits`, `users/{uid}/entries` (per-user) |
 
 ---
 

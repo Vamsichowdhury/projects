@@ -17,10 +17,16 @@
 │  ┌─────────────────────────────────────────────────────┐   │
 │  │           Pinia State Management                    │   │
 │  │  ┌────────────────────────────────────────────────┐ │   │
+│  │  │  auth.store.ts (Authentication)                │ │   │
+│  │  │  • user (currentUser)                          │ │   │
+│  │  │  • uid, email, isAnonymous                     │ │   │
+│  │  │  • Sign in/up, guest, linking                 │ │   │
+│  │  └────────────────────────────────────────────────┘ │   │
+│  │  ┌────────────────────────────────────────────────┐ │   │
 │  │  │  habit.store.ts (Core Logic)                   │ │   │
-│  │  │  • habits[]  (Habit list)                      │ │   │
-│  │  │  • entries[] (HabitEntry records)              │ │   │
-│  │  │  • CRUD operations                             │ │   │
+│  │  │  • habits[]  (Habit list, per-user)            │ │   │
+│  │  │  • entries[] (HabitEntry records, per-user)    │ │   │
+│  │  │  • CRUD operations (scoped to uid)             │ │   │
 │  │  │  • Real-time Firestore onSnapshot listeners   │ │   │
 │  │  └────────────────────────────────────────────────┘ │   │
 │  │  ┌────────────────────────────────────────────────┐ │   │
@@ -37,9 +43,11 @@
 │  └─────────────────────────────────────────────────────┘   │
 │                        ↓                                   │
 │  ┌─────────────────────────────────────────────────────┐   │
-│  │   Firebase / Firestore                             │   │
+│  │   Firebase / Firestore & Auth                      │   │
+│  │   • Authentication (email, Google, anonymous)     │   │
+│  │   • Per-user Firestore paths: users/{uid}/...     │   │
 │  │   • Real-time sync (onSnapshot)                    │   │
-│  │   • Collections: habits, entries                   │   │
+│  │   • Collections: users/{uid}/habits, entries       │   │
 │  └─────────────────────────────────────────────────────┘   │
 │                                                              │
 └─────────────────────────────────────────────────────────────┘
@@ -85,11 +93,18 @@ UI reflects changes
 ## 🎨 Component Hierarchy
 
 ```
-App.vue
+App.vue (authReady gate + theme watcher)
 └── RouterView
-    └── HomeView
+    ├── LoginView (if not authenticated)
+    │   ├── Email/password form (sign in/up toggle)
+    │   ├── Google sign-in button
+    │   └── Guest sign-in button
+    └── HomeView (if authenticated)
         ├── AppHeader
-        │   └── ThemeToggle
+        │   ├── ThemeToggle
+        │   ├── "Save progress" button (guest only)
+        │   └── Account menu (sign out, link account)
+        │       └── LinkAccountDialog (modal)
         ├── TodayProgress (shown only if daily habits exist)
         ├── EmptyState (shown if no habits)
         └── HabitCard (one per habit)
@@ -114,13 +129,39 @@ FAB (Floating Action Button)
 
 ## 🗃️ State Management (Pinia)
 
-### `habit.store.ts` — Core Store
+### `auth.store.ts` — Authentication State
 
 ```typescript
 // State
-habits: Habit[]           // All habits
-entries: HabitEntry[]     // All rating/note records
+user: ShallowRef<User | null>      // Current Firebase user
+authReady: boolean                 // Auth initialization complete
+authError: string | null           // Error message (user-friendly)
+authLoading: boolean               // Action in progress
+
+// Computed
+isAuthenticated: boolean           // user !== null
+isAnonymous: boolean               // user?.isAnonymous
+uid: string | null                 // user?.uid
+email: string | null               // user?.email
+
+// Actions (all async, return result | null on error)
+signInWithEmail(email, password): Promise<...>
+signUpWithEmail(email, password): Promise<...>
+signInWithGoogle(): Promise<...>
+signInAsGuest(): Promise<...>
+linkGoogleAccount(): Promise<...>  // Upgrade anonymous to Google (same uid)
+linkEmailAccount(email, password): Promise<...>  // Upgrade anonymous to email
+signOutUser(): Promise<...>
+```
+
+### `habit.store.ts` — Habit Store (per-user, scoped to uid)
+
+```typescript
+// State
+habits: Habit[]           // User's habits (synced from users/{uid}/habits)
+entries: HabitEntry[]     // User's entries (synced from users/{uid}/entries)
 loading: boolean          // Firestore sync in progress
+firestoreError: string | null  // Error message
 
 // Computed
 dailyHabits: Habit[]      // Only frequency='daily' habits
@@ -128,15 +169,17 @@ todayCompleted: number    // Count of daily habits with entry today
 todayTotal: number        // Total daily habits
 todayPercent: number      // (todayCompleted / todayTotal) * 100
 
-// Actions (all are async — return Promise)
+// Actions (all async, scoped to current uid)
 addHabit(name, emoji, color, frequency): Promise<void>
 updateHabit(id, name, emoji, color, frequency): Promise<void>
-deleteHabit(id): Promise<void>            // Deletes habit + all entries
+deleteHabit(id): Promise<void>      // Deletes habit + all entries (batched)
 getEntry(habitId, date): HabitEntry | null
 setEntry(habitId, date, rating, description): Promise<void>
 removeEntry(habitId, date): Promise<void>
 getEntriesForHabit(habitId): HabitEntry[]
 ```
+
+**Note**: Resubscribes to Firestore whenever `authStore.uid` changes. Linking (guest → Google/email) preserves uid, so no resubscription occurs.
 
 ### `theme.store.ts` — Theme State
 

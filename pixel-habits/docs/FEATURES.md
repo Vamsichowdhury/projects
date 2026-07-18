@@ -3,21 +3,86 @@
 ## 📋 Feature Overview
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                      Pixel Habits Features                       │
-├─────────────────────────────────────────────────────────────────┤
-│ 1. Create Habits      → Name, emoji, frequency, color selection │
-│ 2. Edit Habits        → Modify name, emoji, frequency, color    │
-│ 3. Delete Habits      → Remove with confirmation                │
-│ 4. Per-Habit Heatmap  → Daily/Weekly/Monthly contribution grid  │
-│ 5. Mark Pixels        → Set 1-5 rating + optional notes         │
-│ 6. Unmark Pixels      → Remove rating from past pixels          │
-│ 7. Streak Tracking    → Current & longest streaks per habit     │
-│ 8. Today's Progress   → Daily completion % bar (all daily)      │
-│ 9. Theme Toggle       → Light/Dark mode with persistence        │
-│ 10. Real-time Sync    → Firebase auto-saves all changes         │
-└─────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│                       Pixel Habits Features                          │
+├──────────────────────────────────────────────────────────────────────┤
+│ 0. Authentication         → Email/password, Google, or guest login   │
+│ 1. Create Habits          → Name, emoji, frequency, color selection │
+│ 2. Edit Habits            → Modify name, emoji, frequency, color    │
+│ 3. Delete Habits          → Remove with confirmation                │
+│ 4. Per-Habit Heatmap      → Daily/Weekly/Monthly contribution grid  │
+│ 5. Mark Pixels            → Set 1-5 rating + optional notes         │
+│ 6. Unmark Pixels          → Remove rating from past pixels          │
+│ 7. Streak Tracking        → Current & longest streaks per habit     │
+│ 8. Today's Progress       → Daily completion % bar (all daily)      │
+│ 9. Account Linking        → Link guest to Google/email (data saved) │
+│ 10. Theme Toggle          → Light/Dark mode with persistence        │
+│ 11. Real-time Per-User Sync → Firebase syncs only user's data       │
+└──────────────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## 0️⃣ Authentication & Account Linking
+
+### User Flow: Sign In
+
+1. App redirects unauthenticated users to `/login`
+2. User chooses sign-in method:
+   - **Email/Password Sign Up**: Enter email + password → creates account
+   - **Email/Password Sign In**: Enter email + password → logs in to existing account
+   - **Google Sign-In**: Click "Continue with Google" → popup (one-tap if already logged into Google)
+   - **Guest (Anonymous)**: Click "Continue as Guest" → full habit-tracking access without account
+3. On success → redirect to `/` (home) with access to habits/entries
+
+### User Flow: Account Linking (Guest Only)
+
+1. User signs in as guest (no account, full tracking functionality)
+2. Creates/tracks habits normally
+3. **Optional**: Click "Save progress" in header or account menu
+4. **LinkAccountDialog** opens: "Link your guest account to keep habits on other devices"
+5. Choose:
+   - **Link with Google**: Click "Continue with Google" → account upgraded, habits preserved
+   - **Link with Email**: Enter email + password → account upgraded, habits preserved
+6. Habits, history, and streaks remain — **same guest uid, no data loss**
+7. Next sign-in: user uses the linked email/Google account, habits already there
+
+### Technical Implementation
+
+**Sign-In**: Firebase Auth SDK (`signInWithEmailAndPassword`, `signInWithPopup` Google, `signInAnonymously`)
+
+**Auth Guard** (`src/router/index.ts`):
+- Before each route navigation: check `authStore.authReady` (first `onAuthStateChanged` fired)
+- If `to.meta.requiresAuth` and not authenticated → redirect `/login`
+- If already authenticated and at `/login` → redirect `/`
+
+**Per-User Data**:
+- All habits/entries stored under `users/{uid}/habits` and `users/{uid}/entries`
+- Only the owner (uid matches auth.uid) can read/write (enforced by Firestore rules)
+
+**Linking**:
+- Firebase's `linkWithPopup` / `linkWithCredential` upgrades an anonymous user **in place**
+- **Same uid is preserved** → all existing data at `users/{uid}/habits` stays accessible
+- No migration code needed — just a one-line Firebase call per link method
+
+### Edge Cases & Behaviors
+
+**What if I sign out?**
+- Firebase Auth state clears, user redirected to `/login`
+- Data remains in Firestore under original `users/{uid}/...`
+- Sign back in (same or different account) → new uid → empty slate OR access to old data if using same auth method
+
+**Can I sign in as two different users?**
+- No — only one user can be signed in at a time (per browser/device)
+- Sign out first, then sign in as a different user
+
+**What if I lose my guest account?**
+- If you clear browser storage or use a different device while guest → new uid → new empty account
+- **That's why "Save progress" exists** — link to Google/email to preserve habits across devices
+
+**Can I unlink an account?**
+- Not yet — once linked, the account is permanent
+- (Future enhancement: add "unlink" option to downgrade back to guest)
 
 ---
 

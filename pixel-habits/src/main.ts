@@ -8,6 +8,7 @@ import 'vuetify/styles'
 import './styles/main.scss'
 import App from './App.vue'
 import router from './router'
+import { useAuthStore } from './stores/auth.store'
 
 const vuetify = createVuetify({
   icons: {
@@ -53,6 +54,7 @@ const vuetify = createVuetify({
 const app = createApp(App)
 
 app.use(createPinia())
+useAuthStore()
 app.use(router)
 app.use(vuetify)
 

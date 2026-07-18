@@ -148,11 +148,11 @@ interface HeatmapCell {
 
 ## 🗄️ Firestore Collections
 
-Pixel Habits uses Firestore (Google Cloud Firestore) as its backend database. No authentication required — read/write open for development (see [FIREBASE.md](./FIREBASE.md) for production security rules).
+Pixel Habits uses Firestore (Google Cloud Firestore) as its backend database. All data is stored under per-user namespaces for privacy — users can only read/write their own data via Firebase Authentication security rules.
 
-### Collection: `habits`
+### Collection: `users/{userId}/habits`
 
-**Document ID**: User-created habit ID (Firestore auto-generates)
+**Document ID**: Firestore auto-generates
 
 **Document Structure**:
 ```javascript
@@ -165,17 +165,15 @@ Pixel Habits uses Firestore (Google Cloud Firestore) as its backend database. No
 }
 ```
 
-**Indexes** (for efficient queries):
-- None required for MVP (no complex queries on habits)
-- Full-text search not needed
+**Security**: Only the owner (authenticated user with matching `uid`) can read/write
 
 **Typical Operations**:
-- `addDoc(collection(db, 'habits'), {...})` — Create
-- `updateDoc(doc(db, 'habits', id), {...})` — Update
-- `deleteDoc(doc(db, 'habits', id))` — Delete (+ batch delete all associated entries)
-- `onSnapshot(collection(db, 'habits'), callback)` — Real-time sync
+- `addDoc(collection(db, 'users', userId, 'habits'), {...})` — Create
+- `updateDoc(doc(db, 'users', userId, 'habits', id), {...})` — Update
+- `deleteDoc(doc(db, 'users', userId, 'habits', id))` — Delete (+ batch delete all associated entries)
+- `onSnapshot(collection(db, 'users', userId, 'habits'), callback)` — Real-time sync
 
-### Collection: `entries`
+### Collection: `users/{userId}/entries`
 
 **Document ID**: Firestore auto-generated
 
@@ -189,16 +187,13 @@ Pixel Habits uses Firestore (Google Cloud Firestore) as its backend database. No
 }
 ```
 
-**Composite Index** (for efficient queries):
-- `habitId + date` — Should be unique (application-level enforced)
-- Firestore doesn't enforce unique constraints, so app checks before insert
+**Security**: Only the owner (authenticated user with matching `uid`) can read/write
 
 **Typical Operations**:
-- `addDoc(collection(db, 'entries'), {...})` — Create entry
-- `updateDoc(doc(db, 'entries', id), {...})` — Update rating/description
-- `deleteDoc(doc(db, 'entries', id))` — Delete entry
-- `onSnapshot(collection(db, 'entries'), callback)` — Real-time sync
-- (Future) Query: `where('habitId', '==', id)` to fetch all entries for a habit
+- `addDoc(collection(db, 'users', userId, 'entries'), {...})` — Create entry
+- `updateDoc(doc(db, 'users', userId, 'entries', id), {...})` — Update rating/description
+- `deleteDoc(doc(db, 'users', userId, 'entries', id))` — Delete entry
+- `onSnapshot(collection(db, 'users', userId, 'entries'), callback)` — Real-time sync
 
 ---
 

@@ -23,14 +23,16 @@ Complete guide to Firebase Firestore setup, environment variables, and security 
 4. Choose region (us-east1 recommended for North America)
 5. Click **"Enable"**
 
-### Step 3: Create Collections
+### Step 3: Enable Authentication Providers
 
-Firestore doesn't require pre-created collections, but you can create them for clarity:
+The app supports Email/Password, Google, and Anonymous authentication:
 
-1. In Firestore Console, click **"+ Start collection"**
-2. Name it: `habits` → Click **"Next"**
-3. Skip adding a document (app will add first one) → Click **"Save"**
-4. Repeat for `entries` collection
+1. Firebase Console → **Authentication** (left sidebar)
+2. Click **"Sign-in method"** tab
+3. Click **"Email/Password"** → Enable → Save
+4. Click **"Google"** → Enable → add your dev email as a test user → Save
+5. Click **"Anonymous"** → Enable → Save
+6. Go to **"Settings"** tab → confirm `localhost` and your prod domain are in "Authorized domains" (required for Google popup sign-in)
 
 ### Step 4: Get Firebase Config
 
@@ -64,11 +66,18 @@ Firestore doesn't require pre-created collections, but you can create them for c
 2. **Never commit `.env.local`** to Git (add to `.gitignore`)
 3. Each developer/environment gets their own `.env.local`
 
-### Step 6: Test Connection
+### Step 4: Deploy Security Rules
+
+1. Copy the contents of `firestore.rules` (at repo root) 
+2. Firebase Console → **Firestore Database** → **Rules** tab
+3. Paste the rules and click **"Publish"**
+   - Alternatively, use `firebase deploy --only firestore:rules` if you have `firebase-tools` installed
+
+### Step 5: Test Connection
 
 1. Run `npm run dev`
-2. Open browser console (F12)
-3. Should see no Firebase errors
+2. You should be redirected to `/login`
+3. Sign up with email or continue as guest
 4. Click **[+]** to add a habit
 5. If it appears immediately and persists after refresh → Firestore is working! ✅
 
@@ -99,11 +108,13 @@ Vite automatically loads `.env.local` at build/dev time.
 
 ## 📚 Collections & Documents
 
-### `habits` Collection
+Data is organized per-user under `users/{uid}/` for privacy and security:
+
+### `users/{userId}/habits` Collection
 
 **Structure**:
 ```javascript
-Collection: habits
+Collection: users/{userId}/habits
 └── Document: <auto-id>
     ├── name: string
     ├── emoji: string
@@ -125,11 +136,11 @@ Collection: habits
 }
 ```
 
-### `entries` Collection
+### `users/{userId}/entries` Collection
 
 **Structure**:
 ```javascript
-Collection: entries
+Collection: users/{userId}/entries
 └── Document: <auto-id>
     ├── habitId: string (reference to habits/<habit-id>)
     ├── date: string ('YYYY-MM-DD')
@@ -151,54 +162,36 @@ Collection: entries
 
 ---
 
-## 🔐 Production Security Rules
+## 🔐 Security Rules (In Use)
 
-**⚠️ IMPORTANT**: Default "test mode" rules allow anyone to read/write. For production:
+The app uses per-user security rules enforced via Firebase Authentication. Rules are defined in `firestore.rules` at the repo root and must be deployed to Firebase Console:
 
-### Recommended Rules (with Firebase Auth)
-
+**Rules**:
 ```javascript
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow authenticated users to read/write only their data
     match /users/{userId} {
-      allow read, write: if request.auth.uid == userId;
-      
-      // Habits subcollection
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
       match /habits/{habitId} {
-        allow read, write: if request.auth.uid == userId;
+        allow read, write: if request.auth != null && request.auth.uid == userId;
       }
-      
-      // Entries subcollection
+
       match /entries/{entryId} {
-        allow read, write: if request.auth.uid == userId;
+        allow read, write: if request.auth != null && request.auth.uid == userId;
       }
     }
   }
 }
 ```
 
-**Then**:
-1. Add Authentication to app (`src/firebase/auth.ts` is already prepared)
-2. Update store to use `auth.currentUser.uid` as namespace
-3. Wrap collections in `/users/{uid}/` structure
+**To deploy**:
+1. Copy the rules from `firestore.rules` (repo root)
+2. Firebase Console → Firestore Database → Rules tab → Paste & Publish
+3. Or: `firebase deploy --only firestore:rules` (if firebase-tools installed)
 
-### For Anonymous Development (Temporarily)
-
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // Open read/write for development ONLY
-    match /{document=**} {
-      allow read, write: if true;
-    }
-  }
-}
-```
-
-**⚠️ NEVER use this in production** — anyone can read/delete all data.
+These rules ensure authenticated users can only access their own data under `users/{uid}/`.
 
 ---
 
@@ -256,14 +249,16 @@ Free tier includes 50,000 reads/day, plenty for personal use.
 
 ### Issue: "Loading..." spinner never disappears
 
-**Cause**: Firestore connection failed (wrong config or network issue)
+**Cause**: Auth or Firestore connection failed (wrong config, missing providers, or network issue)
 
 **Debug**:
 1. Open browser DevTools → Console
-2. Look for Firebase errors
+2. Look for Firebase errors (check especially for `auth/` errors or Firestore permission errors)
 3. Check `.env.local` values match Firebase Console
-4. Check internet connection
-5. Verify Firestore is enabled in Firebase Console
+4. Confirm Email/Password, Google, and Anonymous auth providers are enabled (Firebase Console → Authentication → Sign-in method)
+5. Confirm security rules are deployed and correct (Firebase Console → Firestore → Rules)
+6. Check internet connection
+7. Verify Firestore is enabled in Firebase Console
 
 ### Issue: "Permission denied" errors in console
 
@@ -374,13 +369,17 @@ logEvent(analytics, 'habit_created', {
 ## ✅ Checklist
 
 - [ ] Firebase project created
-- [ ] Firestore enabled in test mode
+- [ ] Firestore enabled
+- [ ] Email/Password, Google, and Anonymous auth providers enabled
+- [ ] Authorized domains configured (localhost + prod domain)
 - [ ] `.env.local` created with all 6 variables
+- [ ] `firestore.rules` deployed to Firebase Console
 - [ ] Dev server runs without errors
+- [ ] Can sign up/sign in and land on homepage
 - [ ] Can create a habit and it persists
-- [ ] Page refresh shows saved data
+- [ ] Page refresh shows saved data (user must remain signed in)
+- [ ] Guest account can be linked to Google/email without losing data
 - [ ] Dark/light mode works
-- [ ] (For production) Security rules updated for auth
 
 ---
 

@@ -56,7 +56,7 @@ const showAddDialog = ref(false)  // Controls AddHabitDialog visibility
         type="error"
         variant="tonal"
         class="mb-4"
-        :text="`Firestore error: ${store.firestoreError}. Check your Firebase security rules — allow read, write: if true; for development.`"
+        :text="`Firestore error: ${store.firestoreError}. Check that your Firestore security rules allow this account to read/write users/{uid}/habits and users/{uid}/entries — see docs/FIREBASE.md.`"
       />
 
       <template v-else>

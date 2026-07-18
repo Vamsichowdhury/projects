@@ -19,7 +19,7 @@
  */
 
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import {
   collection,
   doc,
@@ -28,62 +28,87 @@ import {
   deleteDoc,
   onSnapshot,
   writeBatch,
+  type Unsubscribe,
 } from 'firebase/firestore'
 import { format } from 'date-fns'
 import { db } from '@/firebase/firebase'
+import { useAuthStore } from '@/stores/auth.store'
 import type { Habit, HabitEntry, HabitFrequency, HabitRating } from '@/types'
 
 export const useHabitStore = defineStore('habits', () => {
+  const authStore = useAuthStore()
+
   // ─── STATE ───────────────────────────────────────────────────────────────────
 
-  /** All habits for the current user; synced from Firestore 'habits' collection */
   const habits = ref<Habit[]>([])
-
-  /** All habit entries (ratings + notes) for all habits; synced from Firestore 'entries' collection */
   const entries = ref<HabitEntry[]>([])
-
-  /** True while Firestore listeners are setting up; used to show loading spinner */
   const loading = ref(true)
-
-  /** Error message if Firestore connection fails; displayed to user in HomeView */
   const firestoreError = ref<string | null>(null)
 
-  // ─── FIRESTORE LISTENERS ──────────────────────────────────────────────────────
+  // ─── FIRESTORE PATH HELPERS ──────────────────────────────────────────────────
+  const habitsCol = (uid: string) => collection(db, 'users', uid, 'habits')
+  const entriesCol = (uid: string) => collection(db, 'users', uid, 'entries')
+  const habitDoc = (uid: string, id: string) => doc(db, 'users', uid, 'habits', id)
+  const entryDoc = (uid: string, id: string) => doc(db, 'users', uid, 'entries', id)
 
-  /**
-   * Real-time listener for 'habits' collection
-   * Automatically triggered whenever a habit is added/updated/deleted in Firestore.
-   * Once first snapshot arrives, sets loading=false to stop showing spinner.
-   */
-  onSnapshot(
-    collection(db, 'habits'),
-    (snap) => {
-      // Transform Firestore docs into Habit array (include auto-generated id)
-      habits.value = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Habit)
-      loading.value = false  // First snapshot received; Firestore is connected
-      firestoreError.value = null
-    },
-    (err) => {
-      // Listener error (network issue, permission denied, etc.)
-      firestoreError.value = err.message
-      loading.value = false  // Stop spinner and show error to user
-    },
-  )
+  function requireUid(): string {
+    const uid = authStore.uid
+    if (!uid) throw new Error('No authenticated user; cannot access habit data.')
+    return uid
+  }
 
-  /**
-   * Real-time listener for 'entries' collection
-   * Automatically triggered whenever an entry is added/updated/deleted.
-   * Error is non-fatal (entries being unavailable is less critical than habits).
-   */
-  onSnapshot(
-    collection(db, 'entries'),
-    (snap) => {
-      // Transform Firestore docs into HabitEntry array
-      entries.value = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as HabitEntry)
+  // ─── FIRESTORE LISTENERS (reactive to the signed-in user) ────────────────
+  let unsubHabits: Unsubscribe | null = null
+  let unsubEntries: Unsubscribe | null = null
+
+  function teardownListeners() {
+    unsubHabits?.()
+    unsubEntries?.()
+    unsubHabits = null
+    unsubEntries = null
+  }
+
+  function subscribe(uid: string) {
+    loading.value = true
+    firestoreError.value = null
+
+    unsubHabits = onSnapshot(
+      habitsCol(uid),
+      (snap) => {
+        habits.value = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Habit)
+        loading.value = false
+        firestoreError.value = null
+      },
+      (err) => {
+        firestoreError.value = err.message
+        loading.value = false
+      },
+    )
+
+    unsubEntries = onSnapshot(
+      entriesCol(uid),
+      (snap) => {
+        entries.value = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as HabitEntry)
+      },
+      () => {
+        // Entries listener error is non-fatal; habits listener already handles main error state
+      },
+    )
+  }
+
+  watch(
+    () => authStore.uid,
+    (uid) => {
+      teardownListeners()
+      habits.value = []
+      entries.value = []
+      if (uid) {
+        subscribe(uid)
+      } else {
+        loading.value = false
+      }
     },
-    () => {
-      // Entries listener error is non-fatal; habits listener already handles main error state
-    },
+    { immediate: true },
   )
 
   // ─── COMPUTED STATE ────────────────────────────────────────────────────────────
@@ -109,22 +134,14 @@ export const useHabitStore = defineStore('habits', () => {
 
   // ─── CRUD ACTIONS ─────────────────────────────────────────────────────────────
 
-  /**
-   * Create a new habit and persist to Firestore.
-   * @param name - Habit name (required, trimmed, displayed in cards)
-   * @param emoji - Emoji (displayed in habit cards)
-   * @param color - Hex color code (one of 16 preset colors from HABIT_COLORS)
-   * @param frequency - 'daily' | 'weekly' | 'monthly' (determines streak calculation)
-   * Triggers habits listener → habits.value updates automatically
-   */
   async function addHabit(
     name: string,
     emoji: string,
     color: string,
     frequency: HabitFrequency,
   ): Promise<void> {
-    // Add doc with auto-generated ID; Firestore will trigger habits listener
-    await addDoc(collection(db, 'habits'), {
+    const uid = requireUid()
+    await addDoc(habitsCol(uid), {
       name: name.trim(),
       emoji,
       color,
@@ -133,11 +150,6 @@ export const useHabitStore = defineStore('habits', () => {
     })
   }
 
-  /**
-   * Update an existing habit (name, emoji, color, frequency).
-   * Cannot modify createdAt or id (immutable).
-   * Triggers habits listener → habits.value updates automatically
-   */
   async function updateHabit(
     id: string,
     name: string,
@@ -145,28 +157,20 @@ export const useHabitStore = defineStore('habits', () => {
     color: string,
     frequency: HabitFrequency,
   ): Promise<void> {
-    // Update only these fields; other fields remain unchanged
-    await updateDoc(doc(db, 'habits', id), { name: name.trim(), emoji, color, frequency })
+    const uid = requireUid()
+    await updateDoc(habitDoc(uid, id), { name: name.trim(), emoji, color, frequency })
   }
 
-  /**
-   * Delete a habit AND all its associated entries.
-   * Uses writeBatch for atomicity: ensures all-or-nothing (no orphaned data).
-   * If habit deletes but entries don't, we'd have orphaned entries in database.
-   * Triggers both listeners → habits.value and entries.value update automatically
-   */
   async function deleteHabit(id: string): Promise<void> {
+    const uid = requireUid()
     const batch = writeBatch(db)
 
-    // Delete the habit document itself
-    batch.delete(doc(db, 'habits', id))
+    batch.delete(habitDoc(uid, id))
 
-    // Delete all entries for this habit (prevent orphaned data)
     for (const entry of entries.value.filter((e) => e.habitId === id)) {
-      batch.delete(doc(db, 'entries', entry.id))
+      batch.delete(entryDoc(uid, entry.id))
     }
 
-    // Commit all deletes at once; either all succeed or all fail
     await batch.commit()
   }
 
@@ -188,38 +192,26 @@ export const useHabitStore = defineStore('habits', () => {
     return entries.value.filter((e) => e.habitId === habitId)
   }
 
-  /**
-   * Mark a pixel (date) with a rating and optional notes.
-   * Uniqueness: only one entry per (habitId, date) pair.
-   * If entry already exists, updates rating/description (creates new doc, doesn't duplicate).
-   * Called by PixelDetailDialog when user clicks Save.
-   * Triggers entries listener → entries.value updates automatically
-   */
   async function setEntry(
     habitId: string,
     date: string,
     rating: HabitRating,
     description: string,
   ): Promise<void> {
+    const uid = requireUid()
     const existing = entries.value.find((e) => e.habitId === habitId && e.date === date)
     if (existing) {
-      // Update existing entry (user clicked pixel again to change rating)
-      await updateDoc(doc(db, 'entries', existing.id), { rating, description })
+      await updateDoc(entryDoc(uid, existing.id), { rating, description })
     } else {
-      // Create new entry (user marking pixel for first time)
-      await addDoc(collection(db, 'entries'), { habitId, date, rating, description })
+      await addDoc(entriesCol(uid), { habitId, date, rating, description })
     }
   }
 
-  /**
-   * Unmark a pixel (delete entry for a habit on a specific date).
-   * Called by PixelDetailDialog when user clicks Unmark button.
-   * Triggers entries listener → entries.value updates automatically
-   */
   async function removeEntry(habitId: string, date: string): Promise<void> {
+    const uid = requireUid()
     const existing = entries.value.find((e) => e.habitId === habitId && e.date === date)
     if (existing) {
-      await deleteDoc(doc(db, 'entries', existing.id))
+      await deleteDoc(entryDoc(uid, existing.id))
     }
   }
 

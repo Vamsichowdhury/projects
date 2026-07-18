@@ -1,3 +1,33 @@
+/**
+ * Habit Heatmap Component — Three Grid Layouts
+ *
+ * Renders heatmap in one of three formats based on habit.frequency:
+ *
+ * 1. DAILY (default): GitHub-style 52-week × 7-day grid
+ *    - Shows entire year from Jan 1 to today
+ *    - Columns = weeks, rows = days (Sun-Sat)
+ *    - Includes month labels above for reference
+ *    - Legend: grayscale intensity (0=empty → 5=darkest)
+ *
+ * 2. WEEKLY: Linear strip of 52 weeks
+ *    - One cell per week (Monday-based)
+ *    - Rendered as flex row with wrapping
+ *    - Shows count: "X weeks this year"
+ *
+ * 3. MONTHLY: 12-cell grid (one per month)
+ *    - One cell per month
+ *    - Grid layout with month abbreviations below
+ *    - Shows "January", "February", etc.
+ *
+ * Behavior:
+ * - Each cell is clickable (except future dates)
+ * - Click emits 'cellClick' event with HeatmapCell data
+ * - Parent (HabitCard) listens and opens PixelDetailDialog
+ * - Colors determined by HeatmapCell.tier (0-5) and habit color (blend)
+ *
+ * No data mutations; purely presentational.
+ */
+
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useHabitStore } from '@/stores/habit.store'

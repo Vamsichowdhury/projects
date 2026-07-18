@@ -1,3 +1,32 @@
+/**
+ * Home View Component — Main Application Page
+ *
+ * Single-page application (SPA) layout.
+ * Displays:
+ * - AppHeader: Logo, theme toggle, navigation
+ * - TodayProgress: Daily habits completion card (only if frequency=daily habits exist)
+ * - HabitCards: Grid of all habits (one card per habit)
+ * - FAB: Floating action button (+) to create new habit
+ * - EmptyState: Friendly message if no habits yet
+ * - LoadingSpinner: While Firestore listeners initializing
+ * - ErrorAlert: If Firestore connection fails
+ *
+ * State Management:
+ * - Uses habit store (Pinia) for all data: habits[], entries[], loading, firestoreError
+ * - showAddDialog: Controls AddHabitDialog visibility
+ * - Everything else is reactive computed from store state
+ *
+ * Rendering Logic:
+ * 1. While loading: show spinner
+ * 2. If Firestore error: show error message with setup hint
+ * 3. If no habits: show EmptyState with "Create your first habit" CTA
+ * 4. Otherwise: render HabitCard for each habit
+ *
+ * Interactions:
+ * - FAB or EmptyState "Create" button → opens AddHabitDialog
+ * - AddHabitDialog calls store.addHabit() → Firestore write → listeners fire → auto-renders new card
+ */
+
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useHabitStore } from '@/stores/habit.store'
@@ -8,7 +37,7 @@ import EmptyState from '@/components/common/EmptyState.vue'
 import AddHabitDialog from '@/components/dialogs/AddHabitDialog.vue'
 
 const store = useHabitStore()
-const showAddDialog = ref(false)
+const showAddDialog = ref(false)  // Controls AddHabitDialog visibility
 </script>
 
 <template>

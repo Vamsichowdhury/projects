@@ -1,3 +1,20 @@
+/**
+ * Habit Card Component — Individual Habit Display
+ *
+ * Displays a single habit with:
+ * - Header: emoji, name, frequency chip, current & longest streaks, edit/delete buttons
+ * - Body: Heatmap grid (daily/weekly/monthly based on habit.frequency)
+ * - Dialogs: PixelDetailDialog (for marking pixels), EditHabitDialog, DeleteConfirmDialog
+ *
+ * Reactive updates:
+ * - When habit entries change → HabitHeatmap re-renders with new colors
+ * - When habit data changes → chip and streaks update
+ * - When clicked pixel → PixelDetailDialog opens with pre-filled data
+ *
+ * Props: Single Habit object (id, name, emoji, color, frequency, createdAt)
+ * Emits: None (mutations handled via store)
+ */
+
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useHabitStore } from '@/stores/habit.store'

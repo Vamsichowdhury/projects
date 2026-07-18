@@ -1,18 +1,50 @@
+/**
+ * Heatmap Cell Component — Individual Pixel
+ *
+ * GitHub-style contribution square (default 10×10px).
+ * Displays:
+ * - Background color based on entry rating (0-5 tier)
+ * - Tooltip on hover: date + star rating (★★★☆☆)
+ * - Click handler: emits cell data to parent (HabitHeatmap → HabitCard → opens dialog)
+ *
+ * Rendering:
+ * - `<button>` element (not div) for proper semantics and keyboard support
+ * - Vuetify `<v-tooltip>` for hover tooltips
+ * - Reset button defaults (padding, border, appearance) to match legend swatches
+ * - CSS `color-mix()` for theme-aware color blending
+ * - Light mode: inset border rgba(27,31,35,0.06)
+ * - Dark mode: inset border rgba(255,255,255,0.12) — stronger for contrast
+ *
+ * Props:
+ * - cell: HeatmapCell (or null for spacer cells)
+ * - habitColor: hex color for blending (e.g., "#2196f3")
+ * - clickable: false for alignment nulls (not clickable)
+ * - size: custom pixel size (default 10px; weekly=13px, monthly=28px)
+ *
+ * Color Formula:
+ * backgroundColor = color-mix(in srgb, var(--heatmap-0) ${emptyPct}%, var(--hc))
+ * - --heatmap-0: theme-aware empty cell color (light mode gray, dark mode dark gray)
+ * - var(--hc): habit color (user-selected, stored in Habit.color)
+ * - emptyPct: (5 - tier) * 20 = 0% (full color at tier 5) to 100% (empty at tier 0)
+ * Example: tier=3 → emptyPct=40 → 40% empty + 60% habit color = medium tone
+ */
+
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { HeatmapCell } from '@/types'
 
 const props = defineProps<{
-  cell: HeatmapCell | null
-  habitColor: string
-  clickable?: boolean
-  size?: number
+  cell: HeatmapCell | null           // Null for alignment/padding cells (not rendered)
+  habitColor: string                 // Hex color for blending (e.g., "#ff6b6b")
+  clickable?: boolean                // False for null cells; false = not interactive
+  size?: number                      // Pixel size (default 10px)
 }>()
 
 const emit = defineEmits<{
-  click: [cell: HeatmapCell]
+  click: [cell: HeatmapCell]  // Emits cell data when user clicks
 }>()
 
+/** Compute CSS size string (e.g., "10px" or "13px") */
 const cellSize = computed(() => `${props.size ?? 10}px`)
 
 const bgStyle = computed(() => {

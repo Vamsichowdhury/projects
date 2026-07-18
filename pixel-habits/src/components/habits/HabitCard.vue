@@ -1,24 +1,16 @@
-/**
- * Habit Card Component — Individual Habit Display
- *
- * Displays a single habit with:
- * - Header: emoji, name, frequency chip, current & longest streaks, edit/delete buttons
- * - Body: Heatmap grid (daily/weekly/monthly based on habit.frequency)
- * - Dialogs: PixelDetailDialog (for marking pixels), EditHabitDialog, DeleteConfirmDialog
- *
- * Reactive updates:
- * - When habit entries change → HabitHeatmap re-renders with new colors
- * - When habit data changes → chip and streaks update
- * - When clicked pixel → PixelDetailDialog opens with pre-filled data
- *
- * Props: Single Habit object (id, name, emoji, color, frequency, createdAt)
- * Emits: None (mutations handled via store)
- */
+/** * Habit Card Component — Individual Habit Display * * Displays a single habit with: * - Header:
+emoji, name, frequency chip, current & longest streaks, edit/delete buttons * - Body: Heatmap grid
+(daily/weekly/monthly based on habit.frequency) * - Dialogs: PixelDetailDialog (for marking pixels),
+EditHabitDialog, DeleteConfirmDialog * * Reactive updates: * - When habit entries change →
+HabitHeatmap re-renders with new colors * - When habit data changes → chip and streaks update * -
+When clicked pixel → PixelDetailDialog opens with pre-filled data * * Props: Single Habit object
+(id, name, emoji, color, frequency, createdAt) * Emits: None (mutations handled via store) */
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useHabitStore } from '@/stores/habit.store'
 import { useStreak } from '@/composables/useStreak'
+import { getTodayStr } from '@/utils/dateUtils'
 import HabitHeatmap from '@/components/heatmap/HabitHeatmap.vue'
 import EditHabitDialog from '@/components/dialogs/EditHabitDialog.vue'
 import DeleteConfirmDialog from '@/components/dialogs/DeleteConfirmDialog.vue'
@@ -42,6 +34,18 @@ const { currentStreak, longestStreak } = useStreak(habitEntries, habitFrequency)
 const selectedEntry = computed(() =>
   selectedCell.value ? store.getEntry(props.habit.id, selectedCell.value.dateStr) : null,
 )
+
+const todayStr = getTodayStr()
+const todayEntry = computed(() => store.getEntry(props.habit.id, todayStr))
+const isMarkedToday = computed(() => todayEntry.value !== null)
+
+function quickMarkToday() {
+  if (isMarkedToday.value) {
+    store.removeEntry(props.habit.id, todayStr).catch(() => {})
+  } else {
+    store.setEntry(props.habit.id, todayStr, 5, todayEntry.value?.description ?? '').catch(() => {})
+  }
+}
 
 const FREQ_LABELS: Record<string, string> = {
   daily: 'Daily',
@@ -76,24 +80,21 @@ function onDeleteConfirm() {
       </div>
 
       <div class="habit-card__meta">
-        <span
-          class="habit-card__streak"
-          :class="{ 'habit-card__streak--active': currentStreak > 0 }"
-          :title="`Current streak: ${currentStreak}`"
-        >
-          🔥 {{ currentStreak }}
-        </span>
-        <span class="habit-card__streak" :title="`Longest streak: ${longestStreak}`">
-          🏆 {{ longestStreak }}
-        </span>
-        <v-btn
-          icon="mdi-pencil-outline"
-          size="small"
-          variant="text"
-          density="compact"
-          :aria-label="`Edit ${habit.name}`"
-          @click="editTarget = habit"
-        />
+        <div class="habit-card__stat">
+          <span
+            class="habit-card__stat-icon"
+            :class="{ 'habit-card__stat-icon--active': currentStreak > 0 }"
+            >🔥</span
+          >
+          <span class="habit-card__stat-value">{{ currentStreak }}</span>
+          <span class="habit-card__stat-label">Current</span>
+        </div>
+
+        <div class="habit-card__stat">
+          <span class="habit-card__stat-icon">🏆</span>
+          <span class="habit-card__stat-value">{{ longestStreak }}</span>
+          <span class="habit-card__stat-label">Longest</span>
+        </div>
         <v-btn
           icon="mdi-trash-can-outline"
           size="small"
@@ -103,6 +104,28 @@ function onDeleteConfirm() {
           :aria-label="`Delete ${habit.name}`"
           @click="deleteTarget = habit"
         />
+        <v-btn
+          icon="mdi-pencil-outline"
+          size="small"
+          variant="text"
+          density="compact"
+          :aria-label="`Edit ${habit.name}`"
+          @click="editTarget = habit"
+        />
+        <button
+          class="habit-card__quick-mark"
+          :class="{ 'habit-card__quick-mark--done': isMarkedToday }"
+          :aria-label="
+            isMarkedToday ? 'Marked today — click to undo' : `Mark today's ${habit.name} as done`
+          "
+          @click="quickMarkToday"
+        >
+          <v-icon
+            :icon="isMarkedToday ? 'mdi-check-circle' : 'mdi-check-circle-outline'"
+            size="28"
+          />
+          <span class="habit-card__quick-mark-label">{{ isMarkedToday ? 'Done' : 'Mark' }}</span>
+        </button>
       </div>
     </div>
 
@@ -129,7 +152,9 @@ function onDeleteConfirm() {
 
 <style scoped lang="scss">
 .habit-card {
-  transition: transform var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard);
+  transition:
+    transform var(--dur-fast) var(--ease-standard),
+    box-shadow var(--dur-fast) var(--ease-standard);
 
   &:hover {
     transform: translateY(-2px);
@@ -174,22 +199,63 @@ function onDeleteConfirm() {
 
   &__meta {
     display: flex;
-    align-items: center;
-    gap: 4px;
+    align-items: flex-start;
+    gap: 8px;
     flex-shrink: 0;
   }
 
-  &__streak {
-    font-size: 0.8rem;
-    font-weight: 600;
-    opacity: 0.85;
-    white-space: nowrap;
-    padding: 0 4px;
+  &__stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    font-size: 0.75rem;
+  }
+
+  &__stat-icon {
+    font-size: 1.1rem;
     transition: text-shadow var(--dur-fast) var(--ease-standard);
 
     &--active {
       text-shadow: 0 0 8px rgba(255, 140, 40, 0.65);
     }
+  }
+
+  &__stat-value {
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+
+  &__stat-label {
+    font-size: 0.65rem;
+    opacity: 0.6;
+  }
+
+  &__quick-mark {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    color: rgb(var(--v-theme-primary));
+    border-radius: 50%;
+    transition: box-shadow var(--dur-fast) var(--ease-standard);
+    box-shadow: var(--glow-primary);
+    animation: pulse-glow var(--dur-slower) var(--ease-standard) infinite;
+    padding: 0;
+
+    &--done {
+      animation: none;
+      color: rgb(var(--v-theme-success));
+      box-shadow: none;
+    }
+  }
+
+  &__quick-mark-label {
+    font-size: 0.65rem;
+    opacity: 0.7;
   }
 }
 </style>

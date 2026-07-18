@@ -11,6 +11,7 @@ import {
   EmailAuthProvider,
   signOut,
   sendPasswordResetEmail,
+  updateProfile,
   type User,
 } from 'firebase/auth'
 import { auth, googleProvider } from '@/firebase/auth'
@@ -89,8 +90,12 @@ export const useAuthStore = defineStore('auth', () => {
     return run(() => signInWithEmailAndPassword(auth, emailAddr, password))
   }
 
-  function signUpWithEmail(emailAddr: string, password: string) {
-    return run(() => createUserWithEmailAndPassword(auth, emailAddr, password))
+  function signUpWithEmail(emailAddr: string, password: string, name?: string) {
+    return run(async () => {
+      const cred = await createUserWithEmailAndPassword(auth, emailAddr, password)
+      if (name) await updateProfile(cred.user, { displayName: name })
+      return cred
+    })
   }
 
   function signInWithGoogle() {

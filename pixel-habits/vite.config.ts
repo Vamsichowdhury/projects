@@ -19,7 +19,7 @@ export default defineConfig({
         short_name: 'Pixel Habits',
         description: 'Track your habits, one pixel at a time.',
         theme_color: '#238636',
-        background_color: '#ffffff',
+        background_color: '#238636',
         display: 'standalone',
         icons: [
           {

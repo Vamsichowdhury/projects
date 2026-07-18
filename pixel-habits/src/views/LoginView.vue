@@ -2,13 +2,19 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
+import { useProfileStore } from '@/stores/profile.store'
+import AvatarPicker from '@/components/auth/AvatarPicker.vue'
+import { AVATAR_ICONS } from '@/constants/avatars'
 
 const authStore = useAuthStore()
+const profileStore = useProfileStore()
 const router = useRouter()
 
 const mode = ref<'signin' | 'signup' | 'reset'>('signin')
 const email = ref('')
 const password = ref('')
+const name = ref('')
+const selectedAvatar = ref(AVATAR_ICONS[0]!.id)
 const resetSent = ref(false)
 
 const submitting = computed(() => authStore.authLoading)
@@ -22,18 +28,29 @@ async function submitEmail() {
   const result =
     mode.value === 'signin'
       ? await authStore.signInWithEmail(email.value, password.value)
-      : await authStore.signUpWithEmail(email.value, password.value)
-  if (result) router.push('/')
+      : await authStore.signUpWithEmail(email.value, password.value, name.value || undefined)
+  if (result) {
+    if (mode.value === 'signup') {
+      await profileStore.ensureProfile({ name: name.value || null, avatarIcon: selectedAvatar.value })
+    }
+    router.push('/')
+  }
 }
 
 async function submitGoogle() {
   const result = await authStore.signInWithGoogle()
-  if (result) router.push('/')
+  if (result) {
+    await profileStore.ensureProfile({ name: result.user.displayName ?? null, avatarIcon: null })
+    router.push('/')
+  }
 }
 
 async function submitGuest() {
   const result = await authStore.signInAsGuest()
-  if (result) router.push('/')
+  if (result) {
+    await profileStore.ensureProfile({ avatarIcon: AVATAR_ICONS[0]!.id })
+    router.push('/')
+  }
 }
 
 async function submitReset() {
@@ -45,6 +62,8 @@ function switchMode(newMode: 'signin' | 'signup' | 'reset') {
   mode.value = newMode
   authStore.authError = null
   resetSent.value = false
+  name.value = ''
+  selectedAvatar.value = AVATAR_ICONS[0]!.id
 }
 </script>
 
@@ -83,6 +102,17 @@ function switchMode(newMode: 'signin' | 'signup' | 'reset') {
               class="mt-3"
               :autocomplete="mode === 'signin' ? 'current-password' : 'new-password'"
             />
+            <v-text-field
+              v-if="mode === 'signup'"
+              v-model="name"
+              label="Your name"
+              class="mt-3"
+              autocomplete="name"
+            />
+            <div v-if="mode === 'signup'" class="mt-4">
+              <label class="text-caption">Choose your profile icon</label>
+              <AvatarPicker v-model="selectedAvatar" class="mt-2" />
+            </div>
             <v-btn
               type="submit"
               block

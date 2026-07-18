@@ -102,8 +102,9 @@ export function useHeatmap(frequency: Ref<HabitFrequency>, entries: Ref<HabitEnt
    */
   const dailyWeeks = computed<(HeatmapCell | null)[][]>(() => {
     // Prepend null cells for startOffset, then flatten all days into single array
+    const alignmentNulls: (HeatmapCell | null)[] = Array.from({ length: startOffset.value }, () => null)
     const cells: (HeatmapCell | null)[] = [
-      ...new Array<null>(startOffset.value).fill(null),  // Alignment nulls
+      ...alignmentNulls,  // Alignment nulls
       ...dailyCells.value,
     ]
 

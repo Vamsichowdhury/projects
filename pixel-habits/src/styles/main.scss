@@ -50,6 +50,11 @@ body {
   }
 }
 
+// Fix icon-button focus ring color app-wide
+.v-btn::after {
+  border-color: rgba(var(--v-theme-primary), 0.6);
+}
+
 // Dialog backdrop blur
 .v-overlay__scrim {
   backdrop-filter: blur(4px);

@@ -5,8 +5,10 @@ import { format } from 'date-fns'
 import ThemeToggle from '@/components/theme/ThemeToggle.vue'
 import LinkAccountDialog from '@/components/dialogs/LinkAccountDialog.vue'
 import { useAuthStore } from '@/stores/auth.store'
+import { useProfileStore } from '@/stores/profile.store'
 
 const authStore = useAuthStore()
+const profileStore = useProfileStore()
 const router = useRouter()
 const showLinkDialog = ref(false)
 
@@ -14,12 +16,20 @@ const today = computed(() => format(new Date(), 'EEEE, MMMM d, yyyy'))
 
 const greeting = computed(() => {
   const hour = new Date().getHours()
-  if (hour < 12) return 'Good morning'
-  if (hour < 17) return 'Good afternoon'
-  return 'Good evening'
+  const timeGreeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+  const name = authStore.user?.displayName
+  return name ? `${timeGreeting}, ${name}` : timeGreeting
 })
 
 const accountLabel = computed(() => (authStore.isAnonymous ? 'Guest' : authStore.email ?? 'Account'))
+
+const resolvedAvatar = computed(() => {
+  const icon = profileStore.profile?.avatarIcon
+  const photo = authStore.user?.photoURL
+  if (icon) return { type: 'icon' as const, value: icon }
+  if (photo) return { type: 'photo' as const, value: photo }
+  return { type: 'default' as const }
+})
 
 async function handleSignOut() {
   const result = await authStore.signOutUser()
@@ -49,16 +59,24 @@ async function handleSignOut() {
 
       <v-menu>
         <template #activator="{ props }">
-          <v-btn
-            icon="mdi-account-circle"
-            variant="text"
-            v-bind="props"
-            :aria-label="`Account: ${accountLabel}`"
-          />
+          <v-btn variant="text" v-bind="props" :aria-label="`Account: ${accountLabel}`">
+            <v-avatar v-if="resolvedAvatar.type === 'photo'" :image="resolvedAvatar.value" size="32" />
+            <v-avatar v-else-if="resolvedAvatar.type === 'icon'" size="32" color="primary">
+              <v-icon :icon="`mdi-${resolvedAvatar.value}`" />
+            </v-avatar>
+            <v-avatar v-else size="32" color="surface-variant">
+              <v-icon icon="mdi-account-circle" />
+            </v-avatar>
+          </v-btn>
         </template>
         <v-list density="compact">
           <v-list-item :title="accountLabel" subtitle="Signed in" disabled />
           <v-divider />
+          <v-list-item
+            title="Profile"
+            prepend-icon="mdi-account-box"
+            @click="router.push('/profile')"
+          />
           <v-list-item
             v-if="authStore.isAnonymous"
             title="Save your progress"

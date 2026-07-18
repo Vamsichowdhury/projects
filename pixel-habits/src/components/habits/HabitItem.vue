@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Habit } from '@/types'
 
-const props = defineProps<{
+defineProps<{
   habit: Habit
   completed: boolean
 }>()

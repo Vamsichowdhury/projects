@@ -21,7 +21,7 @@ watch(
 <template>
   <v-app>
     <RouterView v-if="authStore.authReady" />
-    <div v-else class="app-loading">
+    <div v-else class="app-loading brand-bg">
       <v-progress-circular indeterminate color="primary" size="48" />
     </div>
   </v-app>

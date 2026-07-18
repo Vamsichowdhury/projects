@@ -110,10 +110,11 @@ function handleClick() {
   border-radius: 2px;
   flex-shrink: 0;
   /* Subtle GitHub-style cell border */
-  box-shadow: inset 0 0 0 1px rgba(27, 31, 35, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(var(--v-theme-on-surface), 0.06);
+  transition: box-shadow var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard);
 
   :global(.v-theme--dark) & {
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+    box-shadow: inset 0 0 0 1px rgba(var(--v-theme-on-surface), 0.12);
   }
 
   &--empty {
@@ -128,7 +129,9 @@ function handleClick() {
   &--clickable {
     cursor: pointer;
 
-    &:hover {
+    &:hover,
+    &:focus-visible {
+      transform: scale(1.15);
       box-shadow: inset 0 0 0 1px rgba(var(--v-theme-on-surface), 0.4);
     }
 

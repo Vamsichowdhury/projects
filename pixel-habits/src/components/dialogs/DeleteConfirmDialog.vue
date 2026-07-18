@@ -23,7 +23,7 @@ function onDialogChange(value: boolean) {
     max-width="400"
     @update:model-value="onDialogChange"
   >
-    <v-card rounded="lg">
+    <v-card>
       <v-card-title>Delete Habit</v-card-title>
 
       <v-card-text>
@@ -37,7 +37,7 @@ function onDialogChange(value: boolean) {
 
         <v-btn variant="text" @click="emit('cancel')"> Cancel </v-btn>
 
-        <v-btn color="error" variant="flat" @click="emit('confirm')"> Delete </v-btn>
+        <v-btn class="btn-gradient--error" @click="emit('confirm')"> Delete </v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>

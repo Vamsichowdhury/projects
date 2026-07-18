@@ -28,7 +28,7 @@ async function linkEmail() {
 
 <template>
   <v-dialog v-model="model" max-width="440">
-    <v-card rounded="lg">
+    <v-card>
       <v-card-title>Save your progress</v-card-title>
       <v-card-text>
         <p class="mb-4">
@@ -57,26 +57,11 @@ async function linkEmail() {
 
         <v-divider class="my-4" />
 
-        <v-text-field
-          v-model="email"
-          label="Email"
-          type="email"
-          variant="outlined"
-          density="compact"
-        />
-        <v-text-field
-          v-model="password"
-          label="Password"
-          type="password"
-          variant="outlined"
-          density="compact"
-          class="mt-3"
-        />
+        <v-text-field v-model="email" label="Email" type="email" />
+        <v-text-field v-model="password" label="Password" type="password" class="mt-3" />
         <v-btn
-          variant="flat"
-          color="primary"
+          class="btn-gradient mt-3"
           block
-          class="mt-3"
           :loading="authStore.authLoading"
           :disabled="authStore.authLoading"
           @click="linkEmail"

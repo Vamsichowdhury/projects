@@ -60,7 +60,7 @@ function onDeleteConfirm() {
 </script>
 
 <template>
-  <v-card rounded="lg" elevation="0" border class="habit-card">
+  <v-card elevation="0" border class="habit-card">
     <div class="habit-card__header">
       <div class="habit-card__identity">
         <span

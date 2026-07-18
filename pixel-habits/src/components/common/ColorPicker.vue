@@ -46,8 +46,8 @@ const model = defineModel<string>({ required: true })
   cursor: pointer;
   padding: 0;
   transition:
-    transform 0.1s,
-    border-color 0.1s;
+    transform var(--dur-fast) var(--ease-standard),
+    border-color var(--dur-fast) var(--ease-standard);
   outline: none;
 
   &:hover {

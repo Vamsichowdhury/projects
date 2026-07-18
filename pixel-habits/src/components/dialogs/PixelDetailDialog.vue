@@ -123,7 +123,7 @@ function onDialogChange(value: boolean) {
 
 <template>
   <v-dialog :model-value="isOpen" max-width="440" @update:model-value="onDialogChange">
-    <v-card rounded="lg">
+    <v-card>
       <v-card-title class="pixel-dialog__title">
         <span v-if="habit">{{ habit.emoji }} {{ habit.name }}</span>
       </v-card-title>
@@ -149,8 +149,6 @@ function onDialogChange(value: boolean) {
           v-model="description"
           label="Notes (optional)"
           rows="3"
-          variant="outlined"
-          density="compact"
           class="mt-4"
           maxlength="500"
           auto-grow
@@ -170,7 +168,7 @@ function onDialogChange(value: boolean) {
         </v-btn>
         <v-spacer />
         <v-btn variant="text" :disabled="saving" @click="emit('close')">Cancel</v-btn>
-        <v-btn variant="flat" color="primary" :loading="saving" @click="save">Save</v-btn>
+        <v-btn class="btn-gradient" :loading="saving" @click="save">Save</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -203,16 +201,16 @@ function onDialogChange(value: boolean) {
     line-height: 1;
     color: rgba(var(--v-theme-on-surface), 0.2);
     transition:
-      color 0.1s,
-      transform 0.1s;
+      color var(--dur-fast) var(--ease-standard),
+      transform var(--dur-fast) var(--ease-standard);
 
     &--active {
-      color: #f5a623;
+      color: var(--color-star);
     }
 
     &:hover {
       transform: scale(1.2);
-      color: #f5a623;
+      color: var(--color-star);
     }
 
     &:focus-visible {

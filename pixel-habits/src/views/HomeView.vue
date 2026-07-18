@@ -62,17 +62,15 @@ const showAddDialog = ref(false)  // Controls AddHabitDialog visibility
       <template v-else>
         <EmptyState v-if="store.habits.length === 0" @create="showAddDialog = true" />
 
-        <div v-else class="home-view__habits">
-          <HabitCard v-for="habit in store.habits" :key="habit.id" :habit="habit" />
-        </div>
+        <TransitionGroup v-else name="habit-list" tag="div" class="home-view__habits">
+          <HabitCard v-for="(habit, index) in store.habits" :key="habit.id" :habit="habit" :style="{ '--stagger': `${Math.min(index * 40, 400)}ms` }" />
+        </TransitionGroup>
       </template>
     </v-container>
 
     <v-btn
       icon="mdi-plus"
-      color="primary"
       size="x-large"
-      elevation="6"
       class="home-view__fab"
       aria-label="Add new habit"
       @click="showAddDialog = true"
@@ -103,6 +101,45 @@ const showAddDialog = ref(false)  // Controls AddHabitDialog visibility
     bottom: 28px;
     right: 28px;
     z-index: 9;
+    background: var(--gradient-brand) !important;
+    box-shadow: var(--glow-primary);
+    transition: box-shadow var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard);
+
+    &:hover {
+      box-shadow: 0 12px 32px -8px rgba(var(--v-theme-primary), 0.6);
+      transform: translateY(-2px) scale(1.05);
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
   }
+}
+
+.habit-list-enter-active {
+  transition: all var(--dur-base) var(--ease-standard);
+}
+
+.habit-list-enter-from {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+.habit-list-leave-active {
+  transition: all var(--dur-base) var(--ease-standard);
+}
+
+.habit-list-leave-to {
+  opacity: 0;
+  transform: translateY(-12px);
+}
+
+.habit-list-move {
+  transition: transform var(--dur-base) var(--ease-standard);
+}
+
+.home-view__habits > * {
+  animation: fade-in-up var(--dur-base) var(--ease-standard);
+  animation-delay: var(--stagger, 0ms);
 }
 </style>

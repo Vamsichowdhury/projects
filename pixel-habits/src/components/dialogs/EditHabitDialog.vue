@@ -65,7 +65,7 @@ function submit() {
 
 <template>
   <v-dialog :model-value="model !== null" max-width="480" @update:model-value="onDialogChange">
-    <v-card rounded="lg">
+    <v-card>
       <v-card-title>Edit Habit</v-card-title>
       <v-card-text>
         <v-text-field
@@ -74,8 +74,6 @@ function submit() {
           :error-messages="nameError"
           maxlength="60"
           autofocus
-          variant="outlined"
-          density="compact"
           @keydown.enter="submit"
           @input="nameError = ''"
         />
@@ -84,8 +82,6 @@ function submit() {
           label="Emoji"
           maxlength="2"
           class="mt-3"
-          variant="outlined"
-          density="compact"
         />
         <div class="mt-4">
           <ColorPicker v-model="color" />
@@ -97,15 +93,13 @@ function submit() {
           item-value="value"
           label="Frequency"
           class="mt-3"
-          variant="outlined"
-          density="compact"
           hide-details
         />
       </v-card-text>
       <v-card-actions>
         <v-spacer />
         <v-btn variant="text" @click="model = null">Cancel</v-btn>
-        <v-btn variant="flat" color="primary" @click="submit">Save</v-btn>
+        <v-btn class="btn-gradient" @click="submit">Save</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>

@@ -16,6 +16,12 @@ const vuetify = createVuetify({
     aliases,
     sets: { mdi },
   },
+  defaults: {
+    VCard: { rounded: 'lg' },
+    VTextField: { variant: 'outlined', density: 'compact' },
+    VSelect: { variant: 'outlined', density: 'compact' },
+    VTextarea: { variant: 'outlined', density: 'compact' },
+  },
   theme: {
     defaultTheme: 'light',
     themes: {

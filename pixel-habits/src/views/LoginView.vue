@@ -49,16 +49,17 @@ function switchMode(newMode: 'signin' | 'signup' | 'reset') {
 </script>
 
 <template>
-  <v-main class="login-view">
+  <v-main class="login-view brand-bg">
     <v-container class="login-view__container" max-width="420">
       <div class="login-view__brand">
-        <h1>🟩 Pixel Habits</h1>
+        <h1 class="login-view__title">🟩 Pixel Habits</h1>
         <p>Track your habits, one pixel at a time.</p>
       </div>
 
-      <v-card rounded="lg">
+      <v-card class="login-view__card">
         <v-card-title>{{ title }}</v-card-title>
-        <v-card-text>
+        <Transition name="mode-switch" mode="out-in">
+        <v-card-text :key="mode">
           <v-alert
             v-if="authStore.authError"
             type="error"
@@ -72,8 +73,6 @@ function switchMode(newMode: 'signin' | 'signup' | 'reset') {
               v-model="email"
               label="Email"
               type="email"
-              variant="outlined"
-              density="compact"
               autocomplete="email"
             />
             <v-text-field
@@ -81,17 +80,13 @@ function switchMode(newMode: 'signin' | 'signup' | 'reset') {
               v-model="password"
               label="Password"
               type="password"
-              variant="outlined"
-              density="compact"
               class="mt-3"
               :autocomplete="mode === 'signin' ? 'current-password' : 'new-password'"
             />
             <v-btn
               type="submit"
-              color="primary"
-              variant="flat"
               block
-              class="mt-4"
+              class="mt-4 btn-gradient"
               :loading="submitting"
               :disabled="submitting || resetSent"
             >
@@ -167,6 +162,7 @@ function switchMode(newMode: 'signin' | 'signup' | 'reset') {
             Continue as Guest
           </v-btn>
         </v-card-text>
+        </Transition>
       </v-card>
     </v-container>
   </v-main>
@@ -186,5 +182,39 @@ function switchMode(newMode: 'signin' | 'signup' | 'reset') {
     text-align: center;
     margin-bottom: 24px;
   }
+
+  &__title {
+    background: var(--gradient-brand);
+    background-size: 200% 200%;
+    animation: gradient-shift var(--dur-slower) var(--ease-standard) infinite alternate;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 0 0 8px 0;
+    font-size: 1.75rem;
+    font-weight: 700;
+  }
+
+  &__card {
+    background: rgba(var(--v-theme-surface), 0.85) !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(var(--v-theme-on-surface), 0.08) !important;
+  }
+}
+
+.mode-switch-enter-active,
+.mode-switch-leave-active {
+  transition: opacity var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard);
+}
+
+.mode-switch-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.mode-switch-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
 }
 </style>

@@ -6,6 +6,18 @@
   --heatmap-3: #30a14e;
   --heatmap-4: #216e39;
   --heatmap-5: #0e4829;
+
+  // Brand gradients and glows (theme-aware, no dual block needed)
+  --gradient-brand: linear-gradient(135deg, rgb(var(--v-theme-primary)), rgb(var(--v-theme-secondary)));
+  --gradient-brand-soft: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.16), rgba(var(--v-theme-secondary), 0.16));
+  --glow-primary: 0 8px 24px -6px rgba(var(--v-theme-primary), 0.45);
+
+  // Shadows (light theme)
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 6px 16px rgba(0, 0, 0, 0.10);
+
+  // Color tokens
+  --color-star: #f5a623;
 }
 
 // Heatmap tier colours — dark theme
@@ -16,4 +28,8 @@
   --heatmap-3: #26a641;
   --heatmap-4: #39d353;
   --heatmap-5: #69ff7d;
+
+  // Shadows (dark theme — stronger to read against dark backgrounds)
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.5);
 }

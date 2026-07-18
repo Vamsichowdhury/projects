@@ -29,7 +29,7 @@ async function handleSignOut() {
 
 <template>
   <header class="app-header">
-    <div class="app-header__text">
+    <div class="app-header__text app-header__text--entrance">
       <h1 class="app-header__greeting">{{ greeting }} 👋</h1>
       <p class="app-header__date">{{ today }}</p>
     </div>
@@ -85,6 +85,10 @@ async function handleSignOut() {
 
   &__text {
     min-width: 0;
+
+    &--entrance {
+      animation: fade-in-up var(--dur-base) var(--ease-standard);
+    }
   }
 
   &__greeting {

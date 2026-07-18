@@ -1,4 +1,5 @@
 @use './variables';
+@use './motion';
 
 *,
 *::before,
@@ -11,4 +12,46 @@ body {
   margin: 0;
   padding: 0;
   -webkit-font-smoothing: antialiased;
+}
+
+// Brand ambient background utility
+.brand-bg {
+  background: var(--gradient-brand-soft);
+  background-size: 200% 200%;
+  animation: gradient-shift var(--dur-slower) var(--ease-standard) infinite alternate;
+}
+
+// Primary CTA button gradients
+.btn-gradient {
+  background: var(--gradient-brand) !important;
+  box-shadow: var(--glow-primary);
+  transition: box-shadow var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard);
+
+  &:hover {
+    box-shadow: 0 12px 32px -8px rgba(var(--v-theme-primary), 0.6);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.btn-gradient--error {
+  background: linear-gradient(135deg, rgb(var(--v-theme-error)), rgba(var(--v-theme-error), 0.8)) !important;
+  box-shadow: 0 8px 24px -6px rgba(var(--v-theme-error), 0.35);
+  transition: box-shadow var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard);
+
+  &:hover {
+    box-shadow: 0 12px 32px -8px rgba(var(--v-theme-error), 0.5);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+// Dialog backdrop blur
+.v-overlay__scrim {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }

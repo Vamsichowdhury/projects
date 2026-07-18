@@ -112,7 +112,7 @@ function submit() {
 
 <template>
   <v-dialog v-model="model" max-width="480">
-    <v-card rounded="lg">
+    <v-card>
       <v-card-title>New Habit</v-card-title>
       <v-card-text>
         <v-text-field
@@ -122,8 +122,6 @@ function submit() {
           :error-messages="nameError"
           maxlength="60"
           autofocus
-          variant="outlined"
-          density="compact"
           @keydown.enter="submit"
           @input="nameError = ''"
         />
@@ -132,8 +130,6 @@ function submit() {
           label="Emoji"
           maxlength="2"
           class="mt-3"
-          variant="outlined"
-          density="compact"
         />
         <v-select
           v-model="frequency"
@@ -142,8 +138,6 @@ function submit() {
           item-value="value"
           label="Frequency"
           class="mt-3"
-          variant="outlined"
-          density="compact"
           hide-details
         />
         <div class="mt-4">
@@ -153,7 +147,7 @@ function submit() {
       <v-card-actions>
         <v-spacer />
         <v-btn variant="text" @click="model = false">Cancel</v-btn>
-        <v-btn variant="flat" color="primary" @click="submit">Create</v-btn>
+        <v-btn class="btn-gradient" @click="submit">Create</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>

@@ -5,11 +5,13 @@ const store = useHabitStore()
 </script>
 
 <template>
-  <v-card class="progress-card" rounded="lg" elevation="0" border>
+  <v-card class="progress-card" elevation="0" border>
     <v-card-text>
       <div class="progress-card__header">
         <span class="progress-card__title">Today's Progress</span>
-        <span class="progress-card__percent">{{ store.todayPercent }}%</span>
+        <Transition name="percent-pop" mode="out-in">
+          <span :key="store.todayPercent" class="progress-card__percent">{{ store.todayPercent }}%</span>
+        </Transition>
       </div>
 
       <v-progress-linear
@@ -67,5 +69,20 @@ const store = useHabitStore()
     font-size: 0.875rem;
     opacity: 0.75;
   }
+}
+
+.percent-pop-enter-active,
+.percent-pop-leave-active {
+  transition: transform var(--dur-fast) var(--ease-emphasized), opacity var(--dur-fast) var(--ease-emphasized);
+}
+
+.percent-pop-enter-from {
+  opacity: 0;
+  transform: scale(0.5);
+}
+
+.percent-pop-leave-to {
+  opacity: 0;
+  transform: scale(0.5);
 }
 </style>

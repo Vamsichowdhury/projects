@@ -1,32 +1,13 @@
-/**
- * Habit Heatmap Component — Three Grid Layouts
- *
- * Renders heatmap in one of three formats based on habit.frequency:
- *
- * 1. DAILY (default): GitHub-style 52-week × 7-day grid
- *    - Shows entire year from Jan 1 to today
- *    - Columns = weeks, rows = days (Sun-Sat)
- *    - Includes month labels above for reference
- *    - Legend: grayscale intensity (0=empty → 5=darkest)
- *
- * 2. WEEKLY: Linear strip of 52 weeks
- *    - One cell per week (Monday-based)
- *    - Rendered as flex row with wrapping
- *    - Shows count: "X weeks this year"
- *
- * 3. MONTHLY: 12-cell grid (one per month)
- *    - One cell per month
- *    - Grid layout with month abbreviations below
- *    - Shows "January", "February", etc.
- *
- * Behavior:
- * - Each cell is clickable (except future dates)
- * - Click emits 'cellClick' event with HeatmapCell data
- * - Parent (HabitCard) listens and opens PixelDetailDialog
- * - Colors determined by HeatmapCell.tier (0-5) and habit color (blend)
- *
- * No data mutations; purely presentational.
- */
+/** * Habit Heatmap Component — Three Grid Layouts * * Renders heatmap in one of three formats based
+on habit.frequency: * * 1. DAILY (default): GitHub-style 52-week × 7-day grid * - Shows entire year
+from Jan 1 to today * - Columns = weeks, rows = days (Sun-Sat) * - Includes month labels above for
+reference * - Legend: grayscale intensity (0=empty → 5=darkest) * * 2. WEEKLY: Linear strip of 52
+weeks * - One cell per week (Monday-based) * - Rendered as flex row with wrapping * - Shows count:
+"X weeks this year" * * 3. MONTHLY: 12-cell grid (one per month) * - One cell per month * - Grid
+layout with month abbreviations below * - Shows "January", "February", etc. * * Behavior: * - Each
+cell is clickable (except future dates) * - Click emits 'cellClick' event with HeatmapCell data * -
+Parent (HabitCard) listens and opens PixelDetailDialog * - Colors determined by HeatmapCell.tier
+(0-5) and habit color (blend) * * No data mutations; purely presentational. */
 
 <script setup lang="ts">
 import { computed } from 'vue'
@@ -56,8 +37,8 @@ const { dailyWeeks, monthLabels, weeklyCells, monthlyCells } = useHeatmap(
 const DAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 const LEGEND_TIERS = [1, 2, 3, 4, 5] as const
 
-const monthStartWeeks = computed(() =>
-  new Set(monthLabels.value.filter(m => m.column > 1).map(m => m.column - 1))
+const monthStartWeeks = computed(
+  () => new Set(monthLabels.value.filter((m) => m.column > 1).map((m) => m.column - 1)),
 )
 
 const weekMonthBoundaries = computed(() => {
@@ -192,7 +173,10 @@ function onCellClick(cell: HeatmapCellType) {
         v-for="t in LEGEND_TIERS"
         :key="t"
         class="hm-legend__cell"
-        :style="{ '--hc': habit.color, backgroundColor: `color-mix(in srgb, var(--heatmap-0) ${(5 - t) * 20}%, var(--hc))` }"
+        :style="{
+          '--hc': habit.color,
+          backgroundColor: `color-mix(in srgb, var(--heatmap-0) ${(5 - t) * 20}%, var(--hc))`,
+        }"
       />
       <span class="hm-legend__label">More</span>
     </div>
@@ -361,4 +345,3 @@ function onCellClick(cell: HeatmapCellType) {
   }
 }
 </style>
-

@@ -112,11 +112,9 @@ function handleClick() {
   flex-shrink: 0;
   /* Subtle GitHub-style cell border */
   box-shadow: inset 0 0 0 1px rgba(var(--v-theme-on-surface), 0.06);
-  transition: box-shadow var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard);
-
-  :global(.v-theme--dark) & {
-    box-shadow: inset 0 0 0 1px rgba(var(--v-theme-on-surface), 0.12);
-  }
+  transition:
+    box-shadow var(--dur-fast) var(--ease-standard),
+    transform var(--dur-fast) var(--ease-standard);
 
   &--empty {
     background-color: var(--heatmap-0);
@@ -133,7 +131,9 @@ function handleClick() {
     &:hover,
     &:focus-visible {
       transform: scale(1.15);
-      box-shadow: inset 0 0 0 1px rgba(var(--v-theme-on-surface), 0.4), 0 0 6px var(--cell-color);
+      box-shadow:
+        inset 0 0 0 1px rgba(var(--v-theme-on-surface), 0.4),
+        0 0 6px var(--cell-color);
     }
 
     &:focus-visible {

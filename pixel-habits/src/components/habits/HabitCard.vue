@@ -84,15 +84,18 @@ function onDeleteConfirm() {
           <span
             class="habit-card__stat-icon"
             :class="{ 'habit-card__stat-icon--active': currentStreak > 0 }"
-            >🔥</span
           >
-          <span class="habit-card__stat-value">{{ currentStreak }}</span>
+            <span class="habit-card__stat-value">{{ currentStreak }}</span> 🔥</span
+          >
+
           <span class="habit-card__stat-label">Current</span>
         </div>
 
         <div class="habit-card__stat">
-          <span class="habit-card__stat-icon">🏆</span>
-          <span class="habit-card__stat-value">{{ longestStreak }}</span>
+          <span class="habit-card__stat-icon">
+            <span class="habit-card__stat-value">{{ longestStreak }}</span> 🏆</span
+          >
+
           <span class="habit-card__stat-label">Longest</span>
         </div>
         <v-btn
@@ -163,7 +166,7 @@ function onDeleteConfirm() {
 
   &__header {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     padding: 12px 16px 4px;
     flex-wrap: wrap;
